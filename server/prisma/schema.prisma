@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth & Couple ──────────────────────────────────────────────────────────
+
+model Couple {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  startedDate DateTime
+  weekGoal    Int      @default(5)
+  createdAt   DateTime @default(now())
+
+  users User[]
+}
+
+model User {
+  id       String @id @default(uuid())
+  personId String @unique // 'alex' | 'yuka'
+  name     String
+  color    String
+
+  coupleId String
+  couple   Couple @relation(fields: [coupleId], references: [id])
+
+  cookedHistory HistoryEntry[]
+  shoppingItems ShoppingEntry[]
+  memories      Memory[]
+  recipes       Recipe[]
+}
+
+// ─── Recipes ────────────────────────────────────────────────────────────────
+
+model Recipe {
+  id          String   @id @default(uuid())
+  name        String
+  tag         String   // 'Brunch' | 'Lunch' | 'Dinner' | 'Snack' | 'Weekday' | 'AI'
+  time        Int      // minutes
+  difficulty  String   // 'Easy' | 'Medium' | 'Hard'
+  cookedCount Int      @default(0)
+  rating      Float    @default(0)
+  bg          String   // hex background
+  accent      String   // hex accent
+  servings    Int?
+  why         String?  // short description
+  isAI        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  byId String
+  by   User   @relation(fields: [byId], references: [id])
+
+  nutrition   Nutrition?
+  ingredients RecipeIngredient[]
+  steps       RecipeStep[]
+  sprites     RecipeSprite[]
+  history     HistoryEntry[]
+  memories    Memory[]
+}
+
+model RecipeSprite {
+  id       String @id @default(uuid())
+  sprite   String // FoodGlyphId
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+}
+
+model Nutrition {
+  id      String @id @default(uuid())
+  kcal    Float
+  protein Float
+  carbs   Float
+  fat     Float
+  fiber   Float?
+
+  recipeId String @unique
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+}
+
+model RecipeStep {
+  id    String @id @default(uuid())
+  order Int
+  title String
+  desc  String
+  mins  Int
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+}
+
+model RecipeIngredient {
+  id   String @id @default(uuid())
+  qty  Float
+  unit String
+
+  recipeId     String
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+}
+
+// ─── Pantry ─────────────────────────────────────────────────────────────────
+
+model Ingredient {
+  id     String @id @default(uuid())
+  name   String
+  qty    Float
+  unit   String
+  cat    String // 'Produce' | 'Protein' | 'Dairy' | 'Pantry' | 'Spice' | 'Other'
+  sprite String // FoodGlyphId
+  expiry Int    // days until expiry
+
+  recipeUses    RecipeIngredient[]
+  shoppingItems ShoppingEntry[]
+}
+
+// ─── Shopping ───────────────────────────────────────────────────────────────
+
+model ShoppingEntry {
+  id        String   @id @default(uuid())
+  name      String
+  qty       String
+  cat       String
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  byId String?
+  by   User?   @relation(fields: [byId], references: [id])
+
+  ingredientId String?
+  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id])
+}
+
+// ─── Utensils ───────────────────────────────────────────────────────────────
+
+model Utensil {
+  id    String  @id @default(uuid())
+  name  String
+  have  Boolean @default(false)
+  emoji String
+}
+
+// ─── History ────────────────────────────────────────────────────────────────
+
+model HistoryEntry {
+  id       String   @id @default(uuid())
+  cookedAt DateTime @default(now())
+  rating   Float
+  note     String?
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+  byId String
+  by   User   @relation(fields: [byId], references: [id])
+}
+
+// ─── Memories ───────────────────────────────────────────────────────────────
+
+model Memory {
+  id        String   @id @default(uuid())
+  date      DateTime
+  bg        String
+  photoUrl  String?
+  createdAt DateTime @default(now())
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+  byId String
+  by   User   @relation(fields: [byId], references: [id])
+}
