@@ -1,39 +1,28 @@
-// src/pages/PantryPage.tsx
-import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card, Chip, FoodIcon, Input, Label } from '@/components/atoms';
 import { ScreenHeader, Section } from '@/components/molecules';
-import { FOOD_GLYPHS, IcPlus, IcSearch } from '@/icons';
-import { INGREDIENTS } from '@/data/mock';
+import { CAT_ICON, FOOD_GLYPHS, IcPlus, IcSearch } from '@/icons';
+import { usePantry } from '@/hooks/usePantry';
 import type { IngredientCat } from '@/types';
-
-export interface PantryPageProps {
-  onAdd?: () => void;
-}
 
 const CATS: Array<'All' | IngredientCat> = ['All', 'Produce', 'Protein', 'Dairy', 'Pantry'];
 
-export function PantryPage({ onAdd }: PantryPageProps) {
-  const [search, setSearch] = useState('');
-  const [cat, setCat] = useState<'All' | IngredientCat>('All');
-
-  const filtered = useMemo(
-    () =>
-      INGREDIENTS.filter(
-        (i) =>
-          (cat === 'All' || i.cat === cat) &&
-          i.name.toLowerCase().includes(search.toLowerCase()),
-      ),
-    [cat, search],
-  );
-  const expiring = INGREDIENTS.filter((i) => i.expiry <= 4).sort((a, b) => a.expiry - b.expiry);
+export function PantryPage() {
+  const navigate = useNavigate();
+  const { ingredients, filtered, expiring, isLoading, cat, setCat, search, setSearch } =
+    usePantry();
 
   return (
     <div>
       <ScreenHeader
         title="Pantry"
-        sub={`${INGREDIENTS.length} items · ${expiring.length} expiring soon`}
+        sub={
+          isLoading
+            ? 'Loading…'
+            : `${ingredients.length} items · ${expiring.length} expiring soon`
+        }
         right={
-          <Button variant="primary" size="md" icon={<IcPlus size={14} />} onClick={onAdd}>
+          <Button variant="primary" size="md" icon={<IcPlus size={14} />} onClick={() => navigate('/pantry/add')}>
             Add
           </Button>
         }
@@ -64,11 +53,11 @@ export function PantryPage({ onAdd }: PantryPageProps) {
       {/* Use soon */}
       {expiring.length > 0 && cat === 'All' && !search && (
         <>
-          <Section title="Use soon ⏰" count={expiring.length} kicker="don't waste" />
+          <Section title="Use soon" count={expiring.length} kicker="don't waste" />
           <div className="flex gap-2.5 overflow-x-auto no-scrollbar px-[18px] pt-3 pb-[18px]">
             {expiring.map((i) => {
               const urgent = i.expiry <= 1;
-              const accent = FOOD_GLYPHS[i.sprite].color;
+              const accent = FOOD_GLYPHS[CAT_ICON[i.cat]].color;
               return (
                 <div
                   key={i.id}
@@ -83,7 +72,7 @@ export function PantryPage({ onAdd }: PantryPageProps) {
                     className="w-[60px] h-[60px] rounded-2xl flex items-center justify-center"
                     style={{ background: accent + '18' }}
                   >
-                    <FoodIcon name={i.sprite} size={36} />
+                    <FoodIcon name={CAT_ICON[i.cat]} size={36} />
                   </div>
                   <div className="text-[13px] font-bold text-ink text-center tracking-[-0.1px]">
                     {i.name}
@@ -101,31 +90,47 @@ export function PantryPage({ onAdd }: PantryPageProps) {
       {/* Grid */}
       <div className="px-[18px]">
         <Section title={cat === 'All' ? 'Everything' : cat} count={filtered.length} padded={false} />
-        <div className="grid grid-cols-2 gap-2.5 mt-3">
-          {filtered.map((i) => {
-            const accent = FOOD_GLYPHS[i.sprite].color;
-            return (
-              <Card key={i.id} className="p-3 flex items-center gap-2.5">
-                <div
-                  className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: accent + '18' }}
-                >
-                  <FoodIcon name={i.sprite} size={26} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-bold text-ink tracking-[-0.1px] truncate">
-                    {i.name}
-                  </div>
-                  <div className="text-[11px] text-muted mt-0.5">
-                    {i.qty} {i.unit}
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
 
+        {isLoading && (
+          <div className="grid grid-cols-2 gap-2.5 mt-3">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="h-[68px] bg-card rounded-3xl animate-pulse" />
+            ))}
+          </div>
+        )}
+
+        {!isLoading && filtered.length === 0 && (
+          <div className="text-center text-muted text-[13px] py-10">
+            {search ? `No ingredients matching "${search}"` : 'No ingredients yet — add some!'}
+          </div>
+        )}
+
+        {!isLoading && filtered.length > 0 && (
+          <div className="grid grid-cols-2 gap-2.5 mt-3">
+            {filtered.map((i) => {
+              const accent = FOOD_GLYPHS[CAT_ICON[i.cat]].color;
+              return (
+                <Card key={i.id} className="p-3 flex items-center gap-2.5">
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: accent + '18' }}
+                  >
+                    <FoodIcon name={CAT_ICON[i.cat]} size={26} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-bold text-ink tracking-[-0.1px] truncate">
+                      {i.name}
+                    </div>
+                    <div className="text-[11px] text-muted mt-0.5">
+                      {i.qty} {i.unit}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

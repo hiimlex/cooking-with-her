@@ -18,13 +18,13 @@ export interface Couple {
 export type IngredientCat = 'Produce' | 'Protein' | 'Dairy' | 'Pantry' | 'Spice' | 'Other';
 
 export interface Ingredient {
-  id: string;
-  name: string;
-  qty: number;
-  unit: string;
-  cat: IngredientCat;
-  sprite: FoodGlyphId;
-  expiry: number; // days until expiry
+  id:         string;
+  name:       string;
+  qty:        number;
+  unit:       string;
+  cat:        IngredientCat;
+  expiry:     number;
+  monthlyBuy?: number;
 }
 
 export interface RecipeIngredient {
@@ -90,7 +90,7 @@ export interface ShoppingEntry {
   qty: string;
   cat: string;
   done: boolean;
-  by: PersonId | 'other';
+  by: PersonId | 'ai' | 'other';
 }
 
 export interface Suggestion {
@@ -114,16 +114,22 @@ export interface AITag {
 }
 
 export interface Stats {
-  totalCooked: number;
-  streak: number;
+  totalCooked:   number;
+  streak:        number;
   longestStreak: number;
-  byAlex: number;
-  byYuka: number;
-  avgRating: number;
-  weekCount: number;
-  weekGoal: number;
-  topRecipes: string[];
-  cuisineMix: Array<{ name: string; pct: number; color: string }>;
+  byAlex:        number;
+  byYuka:        number;
+  avgRating:     number;
+  weekCount:     number;
+  weekGoal:      number;
+  /** Human-readable date: "Mar 14, 2024" */
+  startedDate?:  string;
+  topRecipes:    string[];
+  cuisineMix:    Array<{ name: string; pct: number; color: string }>;
+  /** Cook count per day, keyed by ISO date (YYYY-MM-DD) */
+  heatmap:         Record<string, number>;
+  /** Recipes cooked per day, keyed by ISO date */
+  heatmapRecipes?: Record<string, { id: string; name: string }[]>;
 }
 
 // All allowed sprite/food glyph ids — keeps Ingredient.sprite safe.

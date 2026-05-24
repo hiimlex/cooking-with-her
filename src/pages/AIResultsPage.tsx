@@ -1,29 +1,28 @@
-// src/pages/AIResultsPage.tsx
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Card, FoodIcon, Label } from '@/components/atoms';
 import { TAG_COLOR } from '@/components/atoms/Label';
 import { SubHeader } from '@/components/molecules';
 import { FOOD_GLYPHS, IcClock, IcSparkle } from '@/icons';
+import { RECIPES } from '@/data/mock';
 import type { Recipe } from '@/types';
 
-export interface AIResultsPageProps {
-  results: Recipe[];
-  onBack?: () => void;
-  onRetry?: () => void;
-  onOpenRecipe?: (id: string) => void;
-}
+export function AIResultsPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const results =
+    (location.state as { results?: Recipe[] } | null)?.results ?? RECIPES.slice(0, 3);
 
-export function AIResultsPage({ results, onBack, onRetry, onOpenRecipe }: AIResultsPageProps) {
   return (
     <div className="pb-[110px] bg-bg min-h-full">
       <SubHeader
-        onBack={onBack}
+        onBack={() => navigate(-1 as never)}
         title="3 ideas just for you"
         sub="Tap one to dive in, or shake for new ones."
-        right={<Button onClick={onRetry}>Shake ↻</Button>}
+        right={<Button onClick={() => navigate('/ai')}>Shake ↻</Button>}
       />
       <div className="px-[18px] pt-2 flex flex-col gap-3">
         {results.map((r, i) => (
-          <AIResultCard key={r.id} recipe={r} top={i === 0} onClick={() => onOpenRecipe?.(r.id)} />
+          <AIResultCard key={r.id} recipe={r} top={i === 0} onClick={() => navigate(`/recipe/${r.id}`)} />
         ))}
       </div>
     </div>

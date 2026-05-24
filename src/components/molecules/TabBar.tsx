@@ -1,14 +1,9 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   IcTabCook, IcTabPantry, IcTabShop, IcTabStats, IcTabUs,
 } from '@/icons';
 
 export type TabId = 'home' | 'pantry' | 'shop' | 'stats' | 'us';
-
-export interface TabBarProps {
-  active: TabId;
-  onChange?: (tab: TabId) => void;
-}
 
 const TABS = [
   { id: 'home',   label: 'Cook',   Icon: IcTabCook,   route: '/home' },
@@ -18,8 +13,10 @@ const TABS = [
   { id: 'us',     label: 'Us',     Icon: IcTabUs,     route: '/us' },
 ] as const;
 
-export function TabBar({ active, onChange }: TabBarProps) {
+export function TabBar() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const active = (TABS.find((t) => pathname.startsWith(t.route))?.id ?? 'home') as TabId;
 
   return (
     <div className="glass absolute left-0 right-0 bottom-0 pt-2.5 pb-[30px] flex justify-around items-center z-30">
@@ -28,7 +25,7 @@ export function TabBar({ active, onChange }: TabBarProps) {
         return (
           <button
             key={t.id}
-            onClick={() => { onChange?.(t.id as TabId); navigate(t.route); }}
+            onClick={() => navigate(t.route)}
             className={[
               'flex flex-col items-center gap-1 px-[14px] py-1 relative',
               isActive ? 'text-accent' : 'text-subtle',

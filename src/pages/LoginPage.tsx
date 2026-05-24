@@ -1,37 +1,38 @@
 import { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Button, Input } from '@/components/atoms';
 import { IcLock, IcUtensils } from '@/icons';
 import { login } from '@/api/auth';
 import { setAuth } from '@/store/authSlice';
-import { useAppDispatch } from '@/store/hooks';
-
-export interface LoginPageProps {
-  onUnlock?: () => void;
-}
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 const PEOPLE = [
   { id: 'alex' as const, name: 'Alex', color: '#7c3aed' },
   { id: 'yuka' as const, name: 'Yuka', color: '#db2777' },
 ];
 
-export function LoginPage({ onUnlock }: LoginPageProps) {
+export function LoginPage() {
   const [code, setCode]   = useState('');
   const [who, setWho]     = useState<'alex' | 'yuka' | null>(null);
   const [shake, setShake] = useState(false);
-  const dispatch = useAppDispatch();
+  const dispatch  = useAppDispatch();
+  const navigate  = useNavigate();
+  const token     = useAppSelector((s) => s.auth.token);
 
   const { mutate, isPending } = useMutation({
     mutationFn: () => login({ code: code.toLowerCase().trim(), who: who! }),
     onSuccess: (data) => {
       dispatch(setAuth(data));
-      onUnlock?.();
+      navigate('/home');
     },
     onError: () => {
       setShake(true);
       setTimeout(() => { setShake(false); setCode(''); }, 450);
     },
   });
+
+  if (token) return <Navigate to="/home" replace />;
 
   const tryUnlock = () => {
     if (!who || code.length < 3 || isPending) return;
@@ -68,12 +69,12 @@ export function LoginPage({ onUnlock }: LoginPageProps) {
             <h1 className="m-0 text-[22px] font-extrabold text-ink tracking-[-0.6px] leading-[1.1]">
               Cooking With Her
             </h1>
-            <div className="text-[13px] text-muted mt-0.5">just for Alex &amp; Yuka 💜</div>
+            <div className="text-[13px] text-muted mt-0.5">just for Alex &amp; Yuka</div>
           </div>
         </div>
 
         <div className="bg-card rounded-[22px] p-[22px]">
-          <div className="text-sm font-bold text-ink mb-1">Welcome back 👋</div>
+          <div className="text-sm font-bold text-ink mb-1">Welcome back</div>
           <div className="text-[13px] text-muted mb-4 leading-[1.45]">
             Who&apos;s cooking today?
           </div>
@@ -138,7 +139,7 @@ export function LoginPage({ onUnlock }: LoginPageProps) {
         </div>
 
         <div className="text-center text-xs text-subtle mt-4 leading-[1.5]">
-          Forgot the word? Ask the cat 🐱
+          Forgot the word? Ask the cat
         </div>
       </div>
 

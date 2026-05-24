@@ -1,14 +1,15 @@
 // src/components/molecules/ShoppingItem.tsx
 import { Avatar, Card, Label } from '@/components/atoms';
-import { IcCheck, IcSparkle } from '@/icons';
+import { IcCheck, IcSparkle, IcX } from '@/icons';
 import type { ShoppingEntry } from '@/types';
 
 export interface ShoppingItemProps {
   item: ShoppingEntry;
   onToggle?: () => void;
+  onRemove?: () => void;
 }
 
-export function ShoppingItem({ item, onToggle }: ShoppingItemProps) {
+export function ShoppingItem({ item, onToggle, onRemove }: ShoppingItemProps) {
   return (
     <Card
       onClick={onToggle}
@@ -39,6 +40,15 @@ export function ShoppingItem({ item, onToggle }: ShoppingItemProps) {
         : item.by !== 'other'
           ? <Avatar who={item.by} size={20} />
           : null}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          className="w-6 h-6 rounded-lg flex items-center justify-center text-subtle hover:text-red-400 hover:bg-red-50 transition-colors flex-shrink-0"
+        >
+          <IcX size={12} />
+        </button>
+      )}
     </Card>
   );
 }

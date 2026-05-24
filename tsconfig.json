@@ -19,9 +19,10 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*":       ["src/*"],
+      "@shared/*": ["shared/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "shared"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

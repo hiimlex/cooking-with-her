@@ -1,4 +1,4 @@
-// src/pages/UsPage.tsx
+import { useNavigate } from 'react-router-dom';
 import { Avatar, Card, FoodIcon } from '@/components/atoms';
 import { MenuRow, Section } from '@/components/molecules';
 import { Stars } from '@/components/atoms';
@@ -7,16 +7,13 @@ import {
 } from '@/icons';
 import { COUPLE, HISTORY, MEMORIES, RECIPES, STATS } from '@/data/mock';
 
-export interface UsPageProps {
-  onSub?: (sub: 'recipes' | 'memories' | 'utensils' | 'goals' | 'settings') => void;
-}
-
-export function UsPage({ onSub }: UsPageProps) {
+export function UsPage() {
+  const navigate = useNavigate();
   const stats = [
     { label: 'Cooks',   value: STATS.totalCooked },
     { label: 'Recipes', value: RECIPES.length },
     { label: 'Photos',  value: MEMORIES.length },
-    { label: 'Streak',  value: `${STATS.streak}🔥` },
+    { label: 'Streak',  value: STATS.streak },
   ];
   return (
     <div>
@@ -37,10 +34,10 @@ export function UsPage({ onSub }: UsPageProps) {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="m-0 text-[22px] font-extrabold text-ink tracking-[-0.5px]">
-              Alex &amp; Yuka 💜
+              Alex &amp; Yuka
             </h1>
             <div className="text-[13px] text-muted mt-0.5">
-              since {COUPLE.startedDate} · 1 cat 🐱
+              since {COUPLE.startedDate} · 1 cat
             </div>
           </div>
         </div>
@@ -66,11 +63,11 @@ export function UsPage({ onSub }: UsPageProps) {
       {/* Menu */}
       <div className="px-[18px] pt-1.5">
         <div className="flex flex-col gap-2">
-          <MenuRow Icon={IcBook}     label="My Recipes" sub={`${RECIPES.length} saved · add new`}    color="#7c3aed" onClick={() => onSub?.('recipes')} />
-          <MenuRow Icon={IcImage}    label="Memories"   sub="14 cooks photographed this month"        color="#ff7eb9" onClick={() => onSub?.('memories')} />
-          <MenuRow Icon={IcUtensils} label="Utensils"   sub="10 of 12 set up"                         color="#22c55e" onClick={() => onSub?.('utensils')} />
-          <MenuRow Icon={IcTarget}   label="Goals"      sub="6 meals/week · on track"                 color="#f59e0b" onClick={() => onSub?.('goals')} />
-          <MenuRow Icon={IcGear}     label="Settings"   sub="Code, theme, notifications"              color="#6b6580" onClick={() => onSub?.('settings')} />
+          <MenuRow Icon={IcBook}     label="My Recipes" sub={`${RECIPES.length} saved · add new`}    color="#7c3aed" onClick={() => navigate('/us/recipes')} />
+          <MenuRow Icon={IcImage}    label="Memories"   sub="14 cooks photographed this month"        color="#ff7eb9" onClick={() => navigate('/us/memories')} />
+          <MenuRow Icon={IcUtensils} label="Utensils"   sub="10 of 12 set up"                         color="#22c55e" onClick={() => navigate('/us/utensils')} />
+          <MenuRow Icon={IcTarget}   label="Goals"      sub="6 meals/week · on track"                 color="#f59e0b" />
+          <MenuRow Icon={IcGear}     label="Settings"   sub="Code, theme, notifications"              color="#6b6580" />
         </div>
       </div>
 

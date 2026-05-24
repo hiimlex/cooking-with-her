@@ -1,19 +1,16 @@
-// src/pages/MemoriesPage.tsx
+import { useNavigate } from 'react-router-dom';
 import { Avatar, Card, FoodIcon } from '@/components/atoms';
 import { SubHeader } from '@/components/molecules';
 import { FOOD_GLYPHS } from '@/icons';
 import { COUPLE, MEMORIES, RECIPES } from '@/data/mock';
 
-export interface MemoriesPageProps {
-  onBack?: () => void;
-}
-
-export function MemoriesPage({ onBack }: MemoriesPageProps) {
+export function MemoriesPage() {
+  const navigate = useNavigate();
   return (
     <div className="pb-[100px]">
       <SubHeader
-        onBack={onBack}
-        title="Memories 📷"
+        onBack={() => navigate(-1 as never)}
+        title="Memories"
         sub={`${MEMORIES.length} cooks photographed this month`}
       />
       <div className="px-[18px] pt-2">

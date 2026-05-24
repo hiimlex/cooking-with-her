@@ -1,14 +1,11 @@
-// src/pages/UtensilsPage.tsx
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Toggle } from '@/components/atoms';
 import { SubHeader } from '@/components/molecules';
 import { UTENSILS } from '@/data/mock';
 
-export interface UtensilsPageProps {
-  onBack?: () => void;
-}
-
-export function UtensilsPage({ onBack }: UtensilsPageProps) {
+export function UtensilsPage() {
+  const navigate = useNavigate();
   const [items, setItems] = useState(UTENSILS);
   const have = items.filter((u) => u.have).length;
   const toggle = (id: string) =>
@@ -17,8 +14,8 @@ export function UtensilsPage({ onBack }: UtensilsPageProps) {
   return (
     <div className="pb-[100px]">
       <SubHeader
-        onBack={onBack}
-        title="Our utensils 🔪"
+        onBack={() => navigate(-1 as never)}
+        title="Our utensils"
         sub={`${have} of ${items.length} ready · we'll match recipes to what you have`}
       />
       <div className="px-[18px] pt-2 flex flex-col gap-2">

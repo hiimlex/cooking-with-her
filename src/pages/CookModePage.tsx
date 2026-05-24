@@ -1,17 +1,13 @@
-// src/pages/CookModePage.tsx
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Label, Progress } from '@/components/atoms';
 import { FOOD_GLYPHS, IcChevLeft, IcChevRight, IcCheck, IcPause, IcPlay, IcX } from '@/icons';
 import { RECIPES } from '@/data/mock';
 
-export interface CookModePageProps {
-  recipeId?: string;
-  onExit?: () => void;
-  onComplete?: () => void;
-}
-
-export function CookModePage({ recipeId = 'shakshuka', onExit, onComplete }: CookModePageProps) {
-  const r = RECIPES.find((x) => x.id === recipeId);
+export function CookModePage() {
+  const navigate = useNavigate();
+  const { id = 'shakshuka' } = useParams<{ id: string }>();
+  const r = RECIPES.find((x) => x.id === id);
   const [step, setStep] = useState(0);
   const [timer, setTimer] = useState(0);
   const [running, setRunning] = useState(false);
@@ -50,7 +46,7 @@ export function CookModePage({ recipeId = 'shakshuka', onExit, onComplete }: Coo
       {/* Top */}
       <div className="pt-[54px] px-[18px] pb-1.5 flex items-center gap-3">
         <button
-          onClick={onExit}
+          onClick={() => navigate(-1 as never)}
           className="w-[38px] h-[38px] rounded-full bg-card text-ink flex items-center justify-center"
         >
           <IcX size={15} />
@@ -130,7 +126,7 @@ export function CookModePage({ recipeId = 'shakshuka', onExit, onComplete }: Coo
         <div className="flex-1" />
         <Button
           variant="primary"
-          onClick={() => (isLast ? onComplete?.() : setStep((s) => s + 1))}
+          onClick={() => (isLast ? navigate(`/cook/${id}/complete`) : setStep((s) => s + 1))}
           icon={isLast ? <IcCheck size={14} /> : undefined}
         >
           {isLast ? 'Finish' : 'Next step'}

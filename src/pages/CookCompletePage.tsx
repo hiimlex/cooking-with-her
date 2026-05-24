@@ -1,17 +1,13 @@
-// src/pages/CookCompletePage.tsx
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Input } from '@/components/atoms';
 import { IcCheck, IcStar } from '@/icons';
 import { RECIPES } from '@/data/mock';
 
-export interface CookCompletePageProps {
-  recipeId?: string;
-  onExit?: () => void;
-  onAddPhoto?: () => void;
-}
-
-export function CookCompletePage({ recipeId = 'shakshuka', onExit, onAddPhoto }: CookCompletePageProps) {
-  const recipe = RECIPES.find((r) => r.id === recipeId);
+export function CookCompletePage() {
+  const navigate = useNavigate();
+  const { id = 'shakshuka' } = useParams<{ id: string }>();
+  const recipe = RECIPES.find((r) => r.id === id);
   const [rating, setRating] = useState(0);
   const [note, setNote] = useState('');
 
@@ -71,13 +67,13 @@ export function CookCompletePage({ recipeId = 'shakshuka', onExit, onAddPhoto }:
           <Input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Leave a sweet note for Alex 💌"
+            placeholder="Leave a note for Alex"
           />
         </Card>
 
         <div className="flex gap-2">
-          <Button full onClick={onAddPhoto}>📷 Add a photo</Button>
-          <Button variant="primary" full onClick={onExit}>Save &amp; exit</Button>
+          <Button full>Add a photo</Button>
+          <Button variant="primary" full onClick={() => navigate('/home')}>Save &amp; exit</Button>
         </div>
       </div>
     </div>

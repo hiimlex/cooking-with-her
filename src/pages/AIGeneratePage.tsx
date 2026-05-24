@@ -1,17 +1,13 @@
-// src/pages/AIGeneratePage.tsx
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Chip } from '@/components/atoms';
 import { Callout, FieldGroup, Segmented, SubHeader } from '@/components/molecules';
 import { TextArea } from '@/components/atoms/Input';
 import { IcFridge, IcSparkle } from '@/icons';
-import { AI_TAGS } from '@/data/mock';
+import { AI_TAGS, RECIPES } from '@/data/mock';
 
-export interface AIGeneratePageProps {
-  onBack?: () => void;
-  onGenerate?: () => void;
-}
-
-export function AIGeneratePage({ onBack, onGenerate }: AIGeneratePageProps) {
+export function AIGeneratePage() {
+  const navigate = useNavigate();
   const [tags, setTags] = useState<Set<string>>(new Set(['usepantry', 'quick']));
   const [time, setTime] = useState<number>(30);
   const [prompt, setPrompt] = useState('');
@@ -25,8 +21,8 @@ export function AIGeneratePage({ onBack, onGenerate }: AIGeneratePageProps) {
   return (
     <div className="pb-[110px] bg-bg min-h-full">
       <SubHeader
-        onBack={onBack}
-        title="Ask Nonna ✨"
+        onBack={() => navigate(-1 as never)}
+        title="Ask Nonna"
         sub="She knows your pantry, your utensils, and how lazy we're feeling."
       />
 
@@ -75,7 +71,7 @@ export function AIGeneratePage({ onBack, onGenerate }: AIGeneratePageProps) {
           3 are expiring within 4 days. Nonna will prioritize using them.
         </Callout>
 
-        <Button variant="primary" size="lg" full onClick={onGenerate} icon={<IcSparkle size={14} />}>
+        <Button variant="primary" size="lg" full onClick={() => navigate('/ai/results', { state: { results: RECIPES.slice(0, 3) } })} icon={<IcSparkle size={14} />}>
           Conjure 3 ideas
         </Button>
       </div>

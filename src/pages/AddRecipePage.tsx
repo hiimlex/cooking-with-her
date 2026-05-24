@@ -1,5 +1,5 @@
-// src/pages/AddRecipePage.tsx
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Chip } from '@/components/atoms';
 import { TextArea } from '@/components/atoms/Input';
 import { Input } from '@/components/atoms';
@@ -8,12 +8,8 @@ import { IcCheck, IcImage, IcSparkle } from '@/icons';
 import { INGREDIENTS } from '@/data/mock';
 import type { Difficulty, RecipeTag } from '@/types';
 
-export interface AddRecipePageProps {
-  onBack?: () => void;
-  onSave?: () => void;
-}
-
-export function AddRecipePage({ onBack, onSave }: AddRecipePageProps) {
+export function AddRecipePage() {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [time, setTime] = useState<number>(30);
   const [diff, setDiff] = useState<Difficulty>('Easy');
@@ -29,8 +25,8 @@ export function AddRecipePage({ onBack, onSave }: AddRecipePageProps) {
   return (
     <div className="pb-[100px] bg-bg min-h-full">
       <SubHeader
-        onBack={onBack}
-        title="New recipe ✏️"
+        onBack={() => navigate(-1 as never)}
+        title="New recipe"
         sub="Save something you made (or want to try)"
       />
       <div className="px-[18px] pt-2 pb-5 flex flex-col gap-[18px]">
@@ -85,8 +81,8 @@ export function AddRecipePage({ onBack, onSave }: AddRecipePageProps) {
         </FieldGroup>
 
         <div className="flex gap-2 mt-1.5">
-          <Button onClick={onBack} className="ml-auto">Cancel</Button>
-          <Button variant="primary" onClick={onSave} icon={<IcCheck size={14} />}>
+          <Button onClick={() => navigate(-1 as never)} className="ml-auto">Cancel</Button>
+          <Button variant="primary" onClick={() => navigate('/us/recipes')} icon={<IcCheck size={14} />}>
             Save recipe
           </Button>
         </div>

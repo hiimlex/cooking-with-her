@@ -1,14 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Avatar, Card, Chip, FoodIcon, Input, Rating } from '@/components/atoms';
-import { RecipeCard, Section, StickerStat } from '@/components/molecules';
-import { IcBook, IcChevRight, IcFlame, IcSearch, IcSparkle, IcTarget } from '@/icons';
+import { RecipeCard, Section } from '@/components/molecules';
+import { IcChevRight, IcSearch, IcSparkle } from '@/icons';
 import { FOOD_GLYPHS } from '@/icons';
 import { useHomeData } from '@/hooks/useHomeData';
-
-export interface HomePageProps {
-  onOpenRecipe?: (id: string) => void;
-  onAIGenerate?: () => void;
-}
 
 const FILTERS = [
   { id: 'all',    label: 'All' },
@@ -18,11 +14,12 @@ const FILTERS = [
   { id: 'Lunch',  label: 'Lunch' },
 ];
 
-export function HomePage({ onOpenRecipe, onAIGenerate }: HomePageProps) {
+export function HomePage() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
 
-  const { recipes, stats, latestEntry, isLoading } = useHomeData(filter, search);
+  const { recipes, latestEntry, isLoading } = useHomeData(filter, search);
 
   const entryAccent = latestEntry
     ? FOOD_GLYPHS[latestEntry.recipeSprite]?.color ?? '#888'
@@ -61,20 +58,10 @@ export function HomePage({ onOpenRecipe, onAIGenerate }: HomePageProps) {
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="px-[18px] pb-[22px] flex gap-2">
-        <StickerStat icon={<IcFlame size={16} />} value={stats?.streak ?? '—'} label="day streak"
-          from="#fff1e5" to="#ffe0c2" fg="#c2410c" />
-        <StickerStat icon={<IcTarget size={16} />} value={stats ? `${stats.weekCount}/${stats.weekGoal}` : '—'} label="this week"
-          from="#dcfce7" to="#bbf7d0" fg="#15803d" />
-        <StickerStat icon={<IcBook size={16} />} value={stats?.totalCooked ?? '—'} label="cooks total"
-          from="#f3eefe" to="#e9deff" fg="#6d28d9" />
-      </div>
-
       {/* Ask Nonna */}
       <div className="px-[18px] pb-[22px]">
         <button
-          onClick={onAIGenerate}
+          onClick={() => navigate('/ai')}
           className="w-full text-left bg-accent text-white rounded-[20px] px-[18px] py-4 flex items-center gap-3.5"
         >
           <div
@@ -96,7 +83,7 @@ export function HomePage({ onOpenRecipe, onAIGenerate }: HomePageProps) {
         <div className="px-[18px] pb-[18px]">
           <Section title="Yesterday's cook" padded={false} />
           <div className="mt-3">
-            <Card onClick={() => onOpenRecipe?.(latestEntry.recipeId)} className="p-3.5 flex items-center gap-3.5">
+            <Card onClick={() => navigate(`/recipe/${latestEntry.recipeId}`)} className="p-3.5 flex items-center gap-3.5">
               <div
                 className="w-[60px] h-[60px] rounded-2xl flex items-center justify-center flex-shrink-0"
                 style={{ background: entryAccent + '18' }}
@@ -141,7 +128,7 @@ export function HomePage({ onOpenRecipe, onAIGenerate }: HomePageProps) {
       ) : (
         <div className="px-[18px] pt-3 grid grid-cols-2 gap-3">
           {recipes.map((r) => (
-            <RecipeCard key={r.id} recipe={r} onClick={() => onOpenRecipe?.(r.id)} />
+            <RecipeCard key={r.id} recipe={r} onClick={() => navigate(`/recipe/${r.id}`)} />
           ))}
         </div>
       )}

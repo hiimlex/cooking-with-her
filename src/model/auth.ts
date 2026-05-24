@@ -1,23 +1,28 @@
 export interface AuthUser {
-  id: string;
+  id:       string;
   personId: 'alex' | 'yuka';
-  name: string;
-  color: string;
+  name:     string;
+  color:    string;
 }
 
 export interface AuthCouple {
-  id: string;
+  id:          string;
   startedDate: string;
-  weekGoal: number;
+  weekGoal:    number;
 }
 
 export interface LoginRequest {
   code: string;
-  who: 'alex' | 'yuka';
+  who:  'alex' | 'yuka';
 }
 
 export interface LoginResponse {
-  token: string;
-  user: AuthUser;
+  token:  string;
+  user:   AuthUser;
+  couple: AuthCouple;
+}
+
+export interface MeResponse {
+  user:   AuthUser;
   couple: AuthCouple;
 }

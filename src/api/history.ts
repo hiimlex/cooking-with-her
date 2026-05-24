@@ -1,12 +1,9 @@
 import { http } from '@/lib/http';
-import type { HistoryEntryDto } from '@/model/recipe';
+import { ENDPOINTS } from '@shared/api';
+import type { HistoryQuery } from '@shared/api';
+import type { HistoryResponse } from '@/model/recipe';
 
-interface HistoryResponse {
-  entries: HistoryEntryDto[];
-  total: number;
-}
-
-export async function getHistory(params?: { limit?: number; offset?: number; personId?: string }): Promise<HistoryResponse> {
-  const { data } = await http.get<HistoryResponse>('/history', { params });
+export async function getHistory(params?: HistoryQuery): Promise<HistoryResponse> {
+  const { data } = await http.get<HistoryResponse>(ENDPOINTS.history.list, { params });
   return data;
 }

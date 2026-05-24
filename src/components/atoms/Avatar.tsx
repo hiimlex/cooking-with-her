@@ -4,7 +4,7 @@ import type { PersonId } from '@/types';
 const data: Record<PersonId, { letter: string; bg: string; fg: string }> = {
   alex: { letter: 'A', bg: '#dde7fa', fg: '#0550ae' },
   yuka: { letter: 'Y', bg: '#fadcdc', fg: '#a40e26' },
-  ai:   { letter: '✦', bg: '#efe3fd', fg: '#6639ba' },
+  ai:   { letter: 'N', bg: '#efe3fd', fg: '#6639ba' },
 };
 
 export interface AvatarProps {

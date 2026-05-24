@@ -170,3 +170,12 @@ export const FOOD_GLYPHS: Record<FoodGlyphId, FoodGlyphDef> = {
   Lemon:   { color: '#bf8700', d: 'M8 13c-3 0-5-2-5-5s2-5 5-5 5 2 5 5-2 5-5 5z M5 4l-1-1M12 4l1-1' },
   Pasta:   { color: '#bf8700', d: 'M3 4v8M5 4v8M7 4v8M9 4v8M11 4v8M13 4v8 M2 4h12' },
 };
+
+export const CAT_ICON: Record<string, FoodGlyphId> = {
+  Produce: 'Carrot',
+  Protein: 'Chicken',
+  Dairy:   'Milk',
+  Pantry:  'Bread',
+  Spice:   'Herb',
+  Other:   'Bread',
+};

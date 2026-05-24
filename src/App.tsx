@@ -6,7 +6,6 @@ import {
   MemoriesPage, MyRecipesPage, PantryPage, RecipeDetailPage,
   ShoppingPage, StatsPage, UsPage, UtensilsPage,
 } from '@/pages';
-import { RECIPES } from '@/data/mock';
 
 type ScreenKey =
   | 'login' | 'home' | 'ai' | 'ai-results' | 'recipe' | 'cook' | 'cook-complete'
@@ -21,13 +20,11 @@ interface ScreenDef {
   render: () => JSX.Element;
 }
 
-const aiResults = RECIPES.slice(0, 3);
-
 const SCREENS: ScreenDef[] = [
   { id: 'login',         label: '01 · Sign in',       group: 'Entry',   route: '/login',            render: () => <LoginPage /> },
   { id: 'home',          label: '02 · Home',          group: 'Entry',   route: '/home',             render: () => <HomePage /> },
   { id: 'ai',            label: '03 · Ask Nonna',     group: 'Entry',   route: '/ai',               render: () => <AIGeneratePage /> },
-  { id: 'ai-results',    label: '04 · Nonna results', group: 'Entry',   route: '/ai/results',       render: () => <AIResultsPage results={aiResults} /> },
+  { id: 'ai-results',    label: '04 · Nonna results', group: 'Entry',   route: '/ai/results',       render: () => <AIResultsPage /> },
 
   { id: 'recipe',        label: '05 · Recipe detail', group: 'Cooking', route: '/recipe/salmon',     render: () => <RecipeDetailPage /> },
   { id: 'cook',          label: '06 · Cook mode',     group: 'Cooking', route: '/cook/shakshuka',    render: () => <CookModePage /> },

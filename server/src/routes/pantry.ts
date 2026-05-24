@@ -1,23 +1,36 @@
 import { FastifyPluginAsync } from 'fastify';
+import type { PantryQuery, IngredientBody } from '../../../shared/api';
 
 const pantryRoutes: FastifyPluginAsync = async (server) => {
   const auth = { preHandler: [server.authenticate] };
 
-  // GET /pantry?cat=&search=&expiringSoon=true
+  // GET /pantry?cat=&search=&expiringSoon=true&expiryMax=7&sortBy=name&sortOrder=desc
   server.get('/', auth, async (request, reply) => {
-    const { cat, search, expiringSoon } = request.query as {
-      cat?: string;
-      search?: string;
-      expiringSoon?: string;
-    };
+    const {
+      cat,
+      search,
+      expiringSoon,
+      expiryMax,
+      sortBy    = 'expiry',
+      sortOrder = 'asc',
+    } = request.query as PantryQuery;
+
+    const resolvedExpiryMax =
+      expiryMax != null
+        ? parseInt(expiryMax)
+        : expiringSoon === 'true'
+        ? 4
+        : undefined;
+
+    const orderField = sortBy === 'name' ? 'name' : sortBy === 'qty' ? 'qty' : 'expiry';
 
     const ingredients = await server.prisma.ingredient.findMany({
       where: {
-        ...(cat    && { cat }),
-        ...(search && { name: { contains: search } }),
-        ...(expiringSoon === 'true' && { expiry: { lte: 4 } }),
+        ...(cat                              && { cat }),
+        ...(search                           && { name: { contains: search } }),
+        ...(resolvedExpiryMax != null        && { expiry: { lte: resolvedExpiryMax } }),
       },
-      orderBy: { expiry: 'asc' },
+      orderBy: { [orderField]: sortOrder },
     });
 
     return reply.send(ingredients);
@@ -25,36 +38,16 @@ const pantryRoutes: FastifyPluginAsync = async (server) => {
 
   // POST /pantry
   server.post('/', auth, async (request, reply) => {
-    const body = request.body as {
-      name: string;
-      qty: number;
-      unit: string;
-      cat: string;
-      sprite: string;
-      expiry: number;
-    };
-
+    const body = request.body as IngredientBody;
     const ingredient = await server.prisma.ingredient.create({ data: body });
     return reply.status(201).send(ingredient);
   });
 
   // PUT /pantry/:id
   server.put('/:id', auth, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const body = request.body as Partial<{
-      name: string;
-      qty: number;
-      unit: string;
-      cat: string;
-      sprite: string;
-      expiry: number;
-    }>;
-
-    const ingredient = await server.prisma.ingredient.update({
-      where: { id },
-      data:  body,
-    });
-
+    const { id }  = request.params as { id: string };
+    const body    = request.body as Partial<IngredientBody>;
+    const ingredient = await server.prisma.ingredient.update({ where: { id }, data: body });
     return reply.send(ingredient);
   });
 
