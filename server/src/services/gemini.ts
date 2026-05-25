@@ -494,3 +494,72 @@ Formato obrigatório:
 
   return parsed;
 }
+
+// ─── Adjust ingredient quantities across recipes (SSE sync) ──────────────────
+
+export interface RecipeIngredientContext {
+  recipeId:       string;
+  recipeName:     string;
+  servings?:      number | null;
+  currentQty:     number;
+  currentUnit:    string;
+  allIngredients: Array<{ name: string; qty: number; unit: string }>;
+}
+
+export interface AdjustedIngredientResult {
+  recipeId:  string;
+  qty:       number;
+  unit:      string;
+  noChange:  boolean;
+  reason?:   string;
+}
+
+export interface AdjustIngredientOutput {
+  adjustments: AdjustedIngredientResult[];
+}
+
+export async function adjustIngredientInRecipes(
+  apiKey:     string,
+  ingredient: { name: string; oldUnit: string; newUnit: string },
+  recipes:    RecipeIngredientContext[],
+): Promise<AdjustIngredientOutput> {
+  const recipeList = recipes.map((r, i) => {
+    const others = r.allIngredients
+      .filter((ing) => ing.name !== ingredient.name)
+      .map((ing) => `${ing.qty} ${ing.unit} de ${ing.name}`)
+      .join(', ');
+    return `${i + 1}. ID: "${r.recipeId}" | Receita: "${r.recipeName}" (${r.servings ?? 2} porções)
+   - ${ingredient.name}: atualmente ${r.currentQty} ${r.currentUnit}
+   - Outros ingredientes da receita: ${others || 'nenhum'}`;
+  }).join('\n\n');
+
+  const prompt = `Você é um conversor de unidades culinárias. O ingrediente "${ingredient.name}" teve sua unidade alterada de "${ingredient.oldUnit}" para "${ingredient.newUnit}".
+
+Esta é uma conversão entre unidades INCOMPATÍVEIS (sem regra matemática direta). Sua tarefa é definir a quantidade mais razoável de "${ingredient.name}" na nova unidade "${ingredient.newUnit}" para cada receita abaixo.
+
+## Receitas afetadas
+${recipeList}
+
+## Regras OBRIGATÓRIAS
+1. NUNCA altere a unidade para algo diferente de "${ingredient.newUnit}" — o usuário escolheu essa unidade e ela deve ser respeitada.
+2. Baseie-se na quantidade atual (currentQty em currentUnit) para estimar o equivalente em "${ingredient.newUnit}".
+3. Use o contexto dos outros ingredientes da receita APENAS para confirmar a escala (ex: se tem 300g de frango, a escala é para 2 porções).
+4. Se a conversão dimensional não fizer sentido (ex: litros → kg), aplique assim mesmo e adicione um aviso claro em "reason".
+5. Altere SOMENTE qty e unit de "${ingredient.name}" — nunca outros ingredientes, nunca os passos.
+6. noChange deve ser true APENAS se a quantidade atual já está expressa corretamente em "${ingredient.newUnit}" e não precisa de ajuste.
+
+## Unidades permitidas para a resposta
+unid · g · ml · kg · L · xícara · col. sopa · col. chá
+
+Responda em JSON com exatamente ${recipes.length} ajuste(s), um por receita:
+{"adjustments":[{"recipeId":"<id exato>","qty":<número>,"unit":"${ingredient.newUnit}","noChange":<true|false>,"reason":"<motivo em pt-BR se ajustado ou aviso dimensional>"}]}`;
+
+  const raw     = await callAI(apiKey, prompt);
+  const parsed  = JSON.parse(raw) as AdjustIngredientOutput;
+
+  if (!Array.isArray(parsed.adjustments)) {
+    throw new Error('AI returned unexpected shape for ingredient adjustments');
+  }
+
+  return parsed;
+}

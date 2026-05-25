@@ -42,6 +42,7 @@ export function CookCompletePage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pantry'] });
+      qc.invalidateQueries({ queryKey: ['recipes'] });
       qc.invalidateQueries({ queryKey: ['history'] });
       qc.invalidateQueries({ queryKey: ['memories'] });
       qc.invalidateQueries({ queryKey: ['stats'] });

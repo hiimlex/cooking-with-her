@@ -52,10 +52,11 @@ export const ENDPOINTS = {
     get: '/stats',
   },
   ai: {
-    generate:      '/ai/generate',
-    tags:          '/ai/tags',
-    improveSteps:  '/ai/improve-steps',
-    improveRecipe: '/ai/improve-recipe',
+    generate:        '/ai/generate',
+    tags:            '/ai/tags',
+    improveSteps:    '/ai/improve-steps',
+    improveRecipe:   '/ai/improve-recipe',
+    ingredientSync:  '/ai/ingredient-sync',
   },
   utensils: {
     list:   '/utensils',

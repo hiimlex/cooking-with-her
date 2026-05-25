@@ -1,5 +1,6 @@
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { TabBar } from "./components/molecules";
+import { TabScrollContainer } from "./components/templates/TabScrollContainer";
 import {
   AIGeneratePage,
   AIResultsPage,
@@ -32,9 +33,9 @@ function AuthLayout() {
 function TabLayout() {
   return (
     <div className="relative h-screen overflow-hidden">
-      <div className="h-full overflow-y-auto overflow-x-hidden no-scrollbar pb-[120px]">
+      <TabScrollContainer>
         <Outlet />
-      </div>
+      </TabScrollContainer>
       <TabBar />
     </div>
   );

@@ -103,3 +103,51 @@ export async function improveStepsAI(
   );
   return data.steps;
 }
+
+// ─── Ingredient sync SSE ────────────────────────────────────────────────────
+
+export type IngredientSyncEvent =
+  | { total: number }
+  | { recipeId: string; recipeName: string; qty: number; unit: string; noChange: boolean; reason: string | null }
+  | { done: true; count: number }
+  | { error: string };
+
+export async function* streamIngredientSync(
+  ingredientId: string,
+  oldUnit:      string,
+): AsyncGenerator<IngredientSyncEvent> {
+  const base  = import.meta.env.VITE_API_URL ?? 'http://localhost:3333';
+  const token = localStorage.getItem('cwh_token') ?? '';
+  const url   = `${base}${ENDPOINTS.ai.ingredientSync}?ingredientId=${encodeURIComponent(ingredientId)}&oldUnit=${encodeURIComponent(oldUnit)}`;
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok || !res.body) {
+    yield { error: `HTTP ${res.status}` };
+    return;
+  }
+
+  const reader  = res.body.getReader();
+  const decoder = new TextDecoder();
+  let   buffer  = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop() ?? '';
+    for (const part of parts) {
+      const line = part.trim();
+      if (line.startsWith('data: ')) {
+        try {
+          yield JSON.parse(line.slice(6)) as IngredientSyncEvent;
+        } catch {
+          // malformed chunk — ignore
+        }
+      }
+    }
+  }
+}

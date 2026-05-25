@@ -1,11 +1,12 @@
 import { getPantry, updateIngredient } from "@/api/pantry";
 import { Button, Card, Chip, FoodIcon, Input, Label } from "@/components/atoms";
+import { IngredientSyncOverlay } from "@/components/organisms";
 import { FieldGroup, SubHeader } from "@/components/molecules";
 import { CAT_ICON, FOOD_GLYPHS, IcCheck } from "@/icons";
 import type { Ingredient, IngredientCat } from "@/types";
 import { UNITS } from "@/utils/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const ICON_GROUPS: { label: string; cat: IngredientCat }[] = [
@@ -43,6 +44,10 @@ export function EditIngredientPage() {
   const [hasMonthly, setHasMonthly] = useState(false);
   const [alwaysAvailable, setAlwaysAvailable] = useState(false);
   const [ready, setReady] = useState(false);
+  const [showSync, setShowSync] = useState(false);
+
+  // tracks unit at load time — used to detect changes after save
+  const originalUnit = useRef<string>('g');
 
   // Pre-populate when ingredient is found in cache
   useEffect(() => {
@@ -57,6 +62,7 @@ export function EditIngredientPage() {
         setHasMonthly(true);
         setMonthlyBuy(String(ingredient.monthlyBuy));
       }
+      originalUnit.current = ingredient.unit;
       setReady(true);
     }
   }, [ingredient, ready]);
@@ -64,11 +70,16 @@ export function EditIngredientPage() {
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (payload: Parameters<typeof updateIngredient>[1]) =>
       updateIngredient(id, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pantry"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pantry'] });
+      qc.invalidateQueries({ queryKey: ['recipes'] });
+      qc.invalidateQueries({ queryKey: ['stats'] });
+    },
   });
 
   const handleSave = async () => {
     if (!name) return;
+    const unitChanged = unit !== originalUnit.current;
     await mutateAsync({
       name,
       qty: alwaysAvailable ? 0 : Number(qty),
@@ -80,7 +91,11 @@ export function EditIngredientPage() {
         ? { monthlyBuy: Number(monthlyBuy) }
         : { monthlyBuy: undefined }),
     });
-    navigate("/pantry");
+    if (unitChanged) {
+      setShowSync(true);
+    } else {
+      navigate("/pantry");
+    }
   };
 
   if (pantryLoading && !ready) {
@@ -120,6 +135,19 @@ export function EditIngredientPage() {
   }
 
   return (
+    <>
+    {showSync && ingredient && (
+      <IngredientSyncOverlay
+        ingredientId={id}
+        ingredientName={name}
+        oldUnit={originalUnit.current}
+        newUnit={unit}
+        onDone={() => {
+          qc.invalidateQueries({ queryKey: ['recipes'] });
+          navigate('/pantry');
+        }}
+      />
+    )}
     <div className="pb-[110px] bg-bg min-h-full">
       <SubHeader
         onBack={() => navigate(-1 as never)}
@@ -310,5 +338,6 @@ export function EditIngredientPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

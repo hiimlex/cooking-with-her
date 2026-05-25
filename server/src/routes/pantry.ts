@@ -8,6 +8,28 @@ function normalizeForSearch(text: string): string {
     .replace(/[̀-ͯ]/g, '');
 }
 
+/**
+ * Returns the multiplicative factor to convert quantities from `fromUnit` to
+ * `toUnit`, or `null` when no automatic conversion is possible (same unit,
+ * incompatible families, or non-numeric units like "unid").
+ *
+ * Examples:
+ *   g  → kg  = 0.001
+ *   kg → g   = 1000
+ *   ml → L   = 0.001
+ *   L  → ml  = 1000
+ */
+function conversionFactor(fromUnit: string, toUnit: string): number | null {
+  if (fromUnit === toUnit) return null;
+  const table: Record<string, Record<string, number>> = {
+    g:  { kg: 0.001 },
+    kg: { g: 1000   },
+    ml: { L: 0.001  },
+    L:  { ml: 1000  },
+  };
+  return table[fromUnit]?.[toUnit] ?? null;
+}
+
 const pantryRoutes: FastifyPluginAsync = async (server) => {
   const auth = { preHandler: [server.authenticate] };
 
@@ -92,14 +114,33 @@ const pantryRoutes: FastifyPluginAsync = async (server) => {
     if (body.monthlyBuy      !== undefined) data.monthlyBuy      = body.monthlyBuy ?? null;
     if (body.alwaysAvailable !== undefined) data.alwaysAvailable = body.alwaysAvailable;
 
-    if (Object.keys(data).length === 0) {
-      const existing = await server.prisma.ingredient.findUnique({ where: { id } });
-      if (!existing) return reply.status(404).send({ error: 'Ingrediente não encontrado' });
-      return reply.send(existing);
-    }
+    // Fetch current ingredient — needed to detect unit change and to 404-check early
+    const current = await server.prisma.ingredient.findUnique({ where: { id } });
+    if (!current) return reply.status(404).send({ error: 'Ingrediente não encontrado' });
+
+    if (Object.keys(data).length === 0) return reply.send(current);
+
+    const newUnit = typeof body.unit === 'string' ? body.unit : null;
+    const factor  = newUnit ? conversionFactor(current.unit, newUnit) : null;
 
     try {
-      const ingredient = await server.prisma.ingredient.update({ where: { id }, data });
+      const ingredient = await server.prisma.$transaction(async (tx) => {
+        const updated = await tx.ingredient.update({ where: { id }, data });
+
+        if (factor !== null && newUnit) {
+          // Cascade: update qty and unit on every RecipeIngredient that uses
+          // this ingredient so recipes stay consistent with the new unit.
+          await tx.$executeRaw`
+            UPDATE "RecipeIngredient"
+            SET    qty  = qty * ${factor},
+                   unit = ${newUnit}
+            WHERE  "ingredientId" = ${id}
+          `;
+        }
+
+        return updated;
+      });
+
       return reply.send(ingredient);
     } catch {
       return reply.status(404).send({ error: 'Ingrediente não encontrado' });

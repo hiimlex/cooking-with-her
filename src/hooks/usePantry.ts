@@ -61,14 +61,20 @@ export function usePantry() {
     [ingredients],
   );
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ['pantry'] });
+    qc.invalidateQueries({ queryKey: ['recipes'] });
+    qc.invalidateQueries({ queryKey: ['stats'] });
+  };
+
   const addMutation = useMutation({
     mutationFn: (payload: IngredientBody) => addIngredient(payload),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: ['pantry'] }),
+    onSuccess:  invalidateAll,
   });
 
   const removeMutation = useMutation({
     mutationFn: (id: string) => deleteIngredient(id),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: ['pantry'] }),
+    onSuccess:  invalidateAll,
   });
 
   return {

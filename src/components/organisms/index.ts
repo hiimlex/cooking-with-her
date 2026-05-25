@@ -1,4 +1,5 @@
 // src/components/organisms/index.ts
-export * from './CookingHeatmap';
-export * from './NutritionCard';
 export * from './AILoading';
+export * from './CookingHeatmap';
+export * from './IngredientSyncOverlay';
+export * from './NutritionCard';

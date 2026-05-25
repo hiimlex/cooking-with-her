@@ -1,5 +1,9 @@
 import { FastifyPluginAsync } from 'fastify';
-import { generateRecipe, improveSteps, improveRecipe, GeminiError } from '../services/gemini';
+import {
+  generateRecipe, improveSteps, improveRecipe, GeminiError,
+  adjustIngredientInRecipes,
+  type RecipeIngredientContext,
+} from '../services/gemini';
 
 function normalizeForMatch(text: string): string {
   return text
@@ -185,6 +189,140 @@ const aiRoutes: FastifyPluginAsync = async (server) => {
       }
       throw err;
     }
+  });
+
+  // GET /ai/ingredient-sync?ingredientId=xxx&oldUnit=yyy
+  // SSE stream: reviews all recipe usages of an ingredient after a unit change.
+  server.get('/ingredient-sync', auth, async (request, reply) => {
+    const { ingredientId, oldUnit } = request.query as { ingredientId: string; oldUnit: string };
+
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return reply.status(503).send({ error: 'GROQ_API_KEY não configurada.' });
+    }
+
+    const raw = reply.raw;
+
+    // CORS headers must be set manually — reply.raw bypasses @fastify/cors hooks.
+    const origin = request.headers.origin;
+    if (origin) {
+      raw.setHeader('Access-Control-Allow-Origin',      origin);
+      raw.setHeader('Access-Control-Allow-Credentials', 'true');
+      raw.setHeader('Vary', 'Origin');
+    }
+
+    raw.setHeader('Content-Type',      'text/event-stream; charset=utf-8');
+    raw.setHeader('Cache-Control',     'no-cache, no-transform');
+    raw.setHeader('Connection',        'keep-alive');
+    raw.setHeader('X-Accel-Buffering', 'no');
+    raw.flushHeaders?.();
+
+    const send = (payload: object) =>
+      raw.write(`data: ${JSON.stringify(payload)}\n\n`);
+
+    // Compatible unit pairs — the math cascade in PUT /pantry/:id already converted
+    // these perfectly. No AI needed; just confirm each recipe as-is.
+    const MATH_PAIRS: Record<string, string> = {
+      g: 'kg', kg: 'g', ml: 'L', L: 'ml',
+    };
+
+    try {
+      const ingredient = await server.prisma.ingredient.findUnique({
+        where: { id: ingredientId },
+      });
+
+      if (!ingredient) {
+        send({ error: 'Ingrediente não encontrado' });
+        raw.end();
+        return reply;
+      }
+
+      const newUnit = ingredient.unit;
+
+      const recipeIngredients = await server.prisma.recipeIngredient.findMany({
+        where: { ingredientId },
+        include: {
+          recipe: {
+            include: {
+              ingredients: { include: { ingredient: true } },
+            },
+          },
+        },
+      });
+
+      if (recipeIngredients.length === 0) {
+        send({ done: true, count: 0 });
+        raw.end();
+        return reply;
+      }
+
+      send({ total: recipeIngredients.length });
+
+      // ── Compatible conversion: math cascade already ran → confirm each recipe ──
+      if (MATH_PAIRS[oldUnit] === newUnit) {
+        for (const ri of recipeIngredients) {
+          send({
+            recipeId:   ri.recipe.id,
+            recipeName: ri.recipe.name,
+            qty:        ri.qty,
+            unit:       ri.unit,
+            noChange:   true,
+            reason:     null,
+          });
+        }
+        send({ done: true, count: 0 });
+        raw.end();
+        return reply;
+      }
+
+      // ── Incompatible conversion: ask AI to handle best-effort ─────────────────
+      const contexts: RecipeIngredientContext[] = recipeIngredients.map((ri) => ({
+        recipeId:       ri.recipe.id,
+        recipeName:     ri.recipe.name,
+        servings:       ri.recipe.servings,
+        currentQty:     ri.qty,
+        currentUnit:    ri.unit,
+        allIngredients: ri.recipe.ingredients.map((i) => ({
+          name: i.ingredient.name,
+          qty:  i.qty,
+          unit: i.unit,
+        })),
+      }));
+
+      const result = await adjustIngredientInRecipes(
+        apiKey,
+        { name: ingredient.name, oldUnit, newUnit },
+        contexts,
+      );
+
+      for (const adj of result.adjustments) {
+        await server.prisma.recipeIngredient.updateMany({
+          where: { ingredientId, recipeId: adj.recipeId },
+          data:  { qty: adj.qty, unit: adj.unit },
+        });
+
+        const recipeName = recipeIngredients.find(
+          (ri) => ri.recipe.id === adj.recipeId,
+        )?.recipe.name ?? adj.recipeId;
+
+        send({
+          recipeId:   adj.recipeId,
+          recipeName,
+          qty:        adj.qty,
+          unit:       adj.unit,
+          noChange:   adj.noChange,
+          reason:     adj.reason ?? null,
+        });
+      }
+
+      send({ done: true, count: result.adjustments.filter((a) => !a.noChange).length });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      send({ error: msg });
+    }
+
+    raw.end();
+    return reply;
   });
 
   // GET /ai/tags

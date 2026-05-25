@@ -55,7 +55,11 @@ export function AddIngredientPage() {
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: addIngredient,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pantry"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pantry'] });
+      qc.invalidateQueries({ queryKey: ['recipes'] });
+      qc.invalidateQueries({ queryKey: ['stats'] });
+    },
   });
 
   const handleNameChange = (v: string) => {
