@@ -28,19 +28,22 @@ async function augmentRecipe(prisma: any, recipe: any): Promise<any> {
   const ingredientIds = recipe.ingredients.map((ri: any) => ri.ingredient.id);
   const placeholders  = ingredientIds.map(() => '?').join(',');
 
+  type RiRow  = { id: string; optional: number };
+  type IngRow = { id: string; alwaysAvailable: number };
+
   const [riRows, ingRows] = await Promise.all([
-    prisma.$queryRawUnsafe<{ id: string; optional: number }[]>(
+    prisma.$queryRawUnsafe(
       `SELECT id, optional FROM RecipeIngredient WHERE recipeId = ?`,
       recipe.id,
-    ),
-    prisma.$queryRawUnsafe<{ id: string; alwaysAvailable: number }[]>(
+    ) as Promise<RiRow[]>,
+    prisma.$queryRawUnsafe(
       `SELECT id, alwaysAvailable FROM Ingredient WHERE id IN (${placeholders})`,
       ...ingredientIds,
-    ),
+    ) as Promise<IngRow[]>,
   ]);
 
-  const riMap  = Object.fromEntries(riRows.map((r) => [r.id, Boolean(r.optional)]));
-  const ingMap = Object.fromEntries(ingRows.map((r) => [r.id, Boolean(r.alwaysAvailable)]));
+  const riMap  = Object.fromEntries(riRows.map((r: RiRow)  => [r.id, Boolean(r.optional)]));
+  const ingMap = Object.fromEntries(ingRows.map((r: IngRow) => [r.id, Boolean(r.alwaysAvailable)]));
 
   return {
     ...recipe,

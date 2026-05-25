@@ -101,6 +101,25 @@ const shoppingRoutes: FastifyPluginAsync = async (server) => {
     return reply.status(201).send(item);
   });
 
+  // POST /shopping/checkout — restock pantry and clear done items
+  server.post('/checkout', auth, async (request, reply) => {
+    const { items } = request.body as { items: Array<{ ingredientId: string; purchasedQty: number }> };
+
+    for (const { ingredientId, purchasedQty } of items) {
+      if (purchasedQty > 0) {
+        await server.prisma.$executeRawUnsafe(
+          `UPDATE Ingredient SET qty = qty + ? WHERE id = ?`,
+          purchasedQty,
+          ingredientId,
+        );
+      }
+    }
+
+    const { count } = await server.prisma.shoppingEntry.deleteMany({ where: { done: true } });
+    broadcast(await buildSnapshot(server.prisma));
+    return reply.send({ ok: true, restocked: items.length, cleared: count });
+  });
+
   // DELETE /shopping/done — must be before /:id to avoid param capture
   server.delete('/done', auth, async (_request, reply) => {
     const { count } = await server.prisma.shoppingEntry.deleteMany({ where: { done: true } });

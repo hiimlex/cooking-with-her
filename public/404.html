@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cooking With Her</title>
+    <script>
+      // GitHub Pages returns this file on any 404.
+      // We store the intended URL in sessionStorage and redirect to the root.
+      // The root's index.html picks it up and replaces the history entry,
+      // so the browser ends up on the correct React Router route.
+      var path = location.pathname + location.search + location.hash;
+      sessionStorage.setItem('spa_redirect', path);
+      var base = location.pathname.split('/').slice(0, 2).join('/') || '/';
+      location.replace(base);
+    </script>
+  </head>
+  <body></body>
+</html>

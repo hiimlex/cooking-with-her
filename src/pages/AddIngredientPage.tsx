@@ -1,52 +1,68 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, Chip, FoodIcon, Input, Label } from '@/components/atoms';
-import { FieldGroup, SubHeader } from '@/components/molecules';
-import { CAT_ICON, FOOD_GLYPHS, IcCheck } from '@/icons';
-import { addIngredient } from '@/api/pantry';
-import { UNITS } from '@/utils/units';
-import type { IngredientCat } from '@/types';
+import { addIngredient } from "@/api/pantry";
+import { Button, Card, Chip, FoodIcon, Input, Label } from "@/components/atoms";
+import { FieldGroup, SubHeader } from "@/components/molecules";
+import { CAT_ICON, FOOD_GLYPHS, IcCheck } from "@/icons";
+import type { IngredientCat } from "@/types";
+import { UNITS } from "@/utils/units";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ICON_GROUPS: { label: string; cat: IngredientCat }[] = [
-  { label: 'Hortifruti', cat: 'Produce' },
-  { label: 'Proteína',   cat: 'Protein' },
-  { label: 'Laticínio',  cat: 'Dairy'   },
-  { label: 'Despensa',   cat: 'Pantry'  },
-  { label: 'Tempero',    cat: 'Spice'   },
-  { label: 'Outro',      cat: 'Other'   },
+  { label: "Hortifruti", cat: "Produce" },
+  { label: "Proteína", cat: "Protein" },
+  { label: "Laticínio", cat: "Dairy" },
+  { label: "Despensa", cat: "Pantry" },
+  { label: "Tempero", cat: "Spice" },
+  { label: "Outro", cat: "Other" },
 ];
 
 const NAME_GUESS: Record<string, IngredientCat> = {
-  tomato: 'Produce', onion: 'Produce', garlic: 'Spice',   carrot: 'Produce',
-  pepper: 'Produce', lemon: 'Produce', basil:  'Spice',   mint:   'Spice',
-  egg:    'Protein', chicken: 'Protein', salmon: 'Protein', fish: 'Protein',
-  cheese: 'Dairy',   parmesan: 'Dairy',  milk:  'Dairy',   cream: 'Dairy',
-  rice:   'Pantry',  pasta: 'Pantry',    bread: 'Pantry',
+  tomato: "Produce",
+  onion: "Produce",
+  garlic: "Spice",
+  carrot: "Produce",
+  pepper: "Produce",
+  lemon: "Produce",
+  basil: "Spice",
+  mint: "Spice",
+  egg: "Protein",
+  chicken: "Protein",
+  salmon: "Protein",
+  fish: "Protein",
+  cheese: "Dairy",
+  parmesan: "Dairy",
+  milk: "Dairy",
+  cream: "Dairy",
+  rice: "Pantry",
+  pasta: "Pantry",
+  bread: "Pantry",
 };
 
 const SHELF_LIFE = [2, 5, 7, 14, 30, 90];
 
 export function AddIngredientPage() {
-  const navigate  = useNavigate();
-  const qc        = useQueryClient();
-  const [name,       setName]       = useState('');
-  const [qty,        setQty]        = useState('');
-  const [unit,       setUnit]       = useState<string>('unid');
-  const [cat,        setCat]        = useState<IngredientCat>('Produce');
-  const [expiry,     setExpiry]     = useState<number>(7);
-  const [monthlyBuy,      setMonthlyBuy]      = useState('');
-  const [hasMonthly,      setHasMonthly]      = useState(false);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [name, setName] = useState("");
+  const [qty, setQty] = useState("");
+  const [unit, setUnit] = useState<string>("unid");
+  const [cat, setCat] = useState<IngredientCat>("Produce");
+  const [expiry, setExpiry] = useState<number>(7);
+  const [monthlyBuy, setMonthlyBuy] = useState("");
+  const [hasMonthly, setHasMonthly] = useState(false);
   const [alwaysAvailable, setAlwaysAvailable] = useState(false);
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: addIngredient,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['pantry'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["pantry"] }),
   });
 
   const handleNameChange = (v: string) => {
     setName(v);
-    const match = Object.keys(NAME_GUESS).find((k) => v.toLowerCase().includes(k));
+    const match = Object.keys(NAME_GUESS).find((k) =>
+      v.toLowerCase().includes(k),
+    );
     if (match) setCat(NAME_GUESS[match]);
   };
 
@@ -54,14 +70,14 @@ export function AddIngredientPage() {
     if (!name) return;
     await mutateAsync({
       name,
-      qty:    alwaysAvailable ? 0 : Number(qty),
+      qty: alwaysAvailable ? 0 : Number(qty),
       unit,
       cat,
       expiry,
       alwaysAvailable,
       ...(hasMonthly && monthlyBuy ? { monthlyBuy: Number(monthlyBuy) } : {}),
     });
-    navigate('/pantry');
+    navigate("/pantry");
   };
 
   return (
@@ -76,20 +92,22 @@ export function AddIngredientPage() {
       <div className="px-[18px] pb-[22px]">
         <Card
           className="p-5 flex items-center gap-4"
-          style={{ background: FOOD_GLYPHS[CAT_ICON[cat]].color + '12' }}
+          style={{ background: FOOD_GLYPHS[CAT_ICON[cat]].color + "12" }}
         >
           <div className="w-[72px] h-[72px] rounded-[20px] bg-card flex items-center justify-center flex-shrink-0">
             <FoodIcon name={CAT_ICON[cat]} size={44} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-lg font-extrabold text-ink tracking-[-0.3px] truncate">
-              {name || 'Sem nome'}
+              {name || "Sem nome"}
             </div>
             <div className="text-[13px] text-muted mt-0.5">
-              {qty || '—'} {unit} · {cat}
+              {qty || "—"} {unit} · {cat}
             </div>
             <div className="mt-1.5">
-              <Label color={expiry <= 3 ? 'red' : expiry <= 7 ? 'yellow' : 'green'}>
+              <Label
+                color={expiry <= 3 ? "red" : expiry <= 7 ? "yellow" : "green"}
+              >
                 {expiry}d de validade
               </Label>
             </div>
@@ -107,21 +125,24 @@ export function AddIngredientPage() {
           />
         </FieldGroup>
 
-        <FieldGroup label="Sempre disponível" sub="Temperos e básicos que nunca acabam (sal, pimenta…)">
+        <FieldGroup
+          label="Sempre disponível"
+          sub="Temperos e básicos que nunca acabam (sal, pimenta…)"
+        >
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setAlwaysAvailable((v) => !v)}
               className={[
-                'w-11 h-6 rounded-full transition-colors flex-shrink-0',
-                alwaysAvailable ? 'bg-accent' : 'bg-subtle',
-              ].join(' ')}
+                "w-11 h-6 rounded-full transition-colors flex-shrink-0",
+                alwaysAvailable ? "bg-accent" : "bg-subtle",
+              ].join(" ")}
             >
               <span
                 className={[
-                  'block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5',
-                  alwaysAvailable ? 'translate-x-5' : 'translate-x-0',
-                ].join(' ')}
+                  "block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5",
+                  alwaysAvailable ? "translate-x-5" : "translate-x-0",
+                ].join(" ")}
               />
             </button>
             {alwaysAvailable && (
@@ -133,45 +154,52 @@ export function AddIngredientPage() {
         </FieldGroup>
 
         {!alwaysAvailable && (
-        <FieldGroup label="Quanto?">
-          <div className="flex items-start gap-2 mb-2">
-            <Input
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              placeholder="0"
-              type="number"
-              className="!w-[110px] text-center text-[17px] font-bold flex-shrink-0"
-            />
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {UNITS.map((u) => (
-              <Chip key={u} active={unit === u} onClick={() => setUnit(u)}>
-                {u}
-              </Chip>
-            ))}
-          </div>
-        </FieldGroup>
+          <FieldGroup label="Quanto?">
+            <div className="flex items-center justify-between gap-2.5">
+              <Input
+                value={qty}
+                onChange={(e) => setQty(e.target.value)}
+                placeholder="0"
+                type="number"
+                className="flex-1 text-center h-[40px] font-bold flex-shrink-0"
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {UNITS.map((u) => (
+                  <Chip key={u} active={unit === u} onClick={() => setUnit(u)}>
+                    {u}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+          </FieldGroup>
         )}
 
         <FieldGroup label="Categoria" sub="Adivinhamos pelo nome">
           <div className="flex gap-2">
             {ICON_GROUPS.map(({ label, cat: groupCat }) => {
               const icon = CAT_ICON[groupCat];
-              const c    = FOOD_GLYPHS[icon].color;
-              const sel  = cat === groupCat;
+              const c = FOOD_GLYPHS[icon].color;
+              const sel = cat === groupCat;
               return (
                 <button
                   key={label}
                   onClick={() => setCat(groupCat)}
                   className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all flex-1"
                   style={{
-                    background: sel ? c + '18' : 'var(--c-card, #f5f3ff)',
-                    border:     sel ? `1.5px solid ${c}` : '1.5px solid transparent',
-                    boxShadow:  sel ? `0 0 0 3px ${c}22` : undefined,
+                    background: sel ? c + "18" : "var(--c-card, #f5f3ff)",
+                    border: sel
+                      ? `1.5px solid ${c}`
+                      : "1.5px solid transparent",
+                    boxShadow: sel ? `0 0 0 3px ${c}22` : undefined,
                   }}
                 >
                   <FoodIcon name={icon} size={28} />
-                  <span className="text-[10px] font-semibold leading-none text-center" style={{ color: sel ? c : undefined }}>{label}</span>
+                  <span
+                    className="text-[10px] font-semibold leading-none text-center"
+                    style={{ color: sel ? c : undefined }}
+                  >
+                    {label}
+                  </span>
                 </button>
               );
             })}
@@ -180,7 +208,7 @@ export function AddIngredientPage() {
 
         <FieldGroup
           label="Validade"
-          sub={`Avisamos quando ${name || 'isso'} estiver perto de vencer`}
+          sub={`Avisamos quando ${name || "isso"} estiver perto de vencer`}
         >
           <div className="flex flex-wrap gap-1.5">
             {SHELF_LIFE.map((d) => (
@@ -200,15 +228,15 @@ export function AddIngredientPage() {
               type="button"
               onClick={() => setHasMonthly((v) => !v)}
               className={[
-                'w-11 h-6 rounded-full transition-colors flex-shrink-0',
-                hasMonthly ? 'bg-accent' : 'bg-subtle',
-              ].join(' ')}
+                "w-11 h-6 rounded-full transition-colors flex-shrink-0",
+                hasMonthly ? "bg-accent" : "bg-subtle",
+              ].join(" ")}
             >
               <span
                 className={[
-                  'block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5',
-                  hasMonthly ? 'translate-x-5' : 'translate-x-0',
-                ].join(' ')}
+                  "block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5",
+                  hasMonthly ? "translate-x-5" : "translate-x-0",
+                ].join(" ")}
               />
             </button>
             {hasMonthly && (
@@ -229,7 +257,9 @@ export function AddIngredientPage() {
         </FieldGroup>
 
         <div className="flex items-center gap-2 mt-1.5">
-          <Button onClick={() => navigate(-1 as never)} disabled={isPending}>Cancelar</Button>
+          <Button onClick={() => navigate(-1 as never)} disabled={isPending}>
+            Cancelar
+          </Button>
           <Button
             variant="primary"
             className="flex-1"
@@ -237,7 +267,7 @@ export function AddIngredientPage() {
             icon={<IcCheck size={14} />}
             disabled={!name || (!alwaysAvailable && !qty) || isPending}
           >
-            {isPending ? 'Salvando…' : 'Adicionar à despensa'}
+            {isPending ? "Salvando…" : "Adicionar à despensa"}
           </Button>
         </div>
       </div>

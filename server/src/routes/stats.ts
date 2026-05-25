@@ -29,13 +29,17 @@ const statsRoutes: FastifyPluginAsync = async (server) => {
     // Current streak — consecutive days with at least one cook
     const streak = calcStreak(allHistory);
 
-    // This week count
-    const weekStart   = new Date();
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    // This week count — Monday to Friday only
+    const now = new Date();
+    const daysSinceMonday = (now.getDay() + 6) % 7;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - daysSinceMonday);
     weekStart.setHours(0, 0, 0, 0);
-    const weekCount = allHistory.filter(
-      (h: any) => new Date(h.cookedAt) >= weekStart,
-    ).length;
+    const weekCount = allHistory.filter((h: any) => {
+      const d   = new Date(h.cookedAt);
+      const dow = d.getDay();
+      return d >= weekStart && dow >= 1 && dow <= 5;
+    }).length;
 
     const couple = await server.prisma.couple.findUnique({ where: { id: coupleId } });
 
@@ -94,24 +98,40 @@ const statsRoutes: FastifyPluginAsync = async (server) => {
   });
 };
 
+function prevWeekday(dateStr: string): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() - 1);
+  if (d.getDay() === 0) d.setDate(d.getDate() - 2); // skip Sun → Fri
+  if (d.getDay() === 6) d.setDate(d.getDate() - 1); // skip Sat → Fri
+  return d.toISOString().split('T')[0];
+}
+
 function calcStreak(history: Array<{ cookedAt: Date }>): number {
   if (!history.length) return 0;
 
+  const weekdayCooks = history.filter((h) => {
+    const dow = h.cookedAt.getDay();
+    return dow >= 1 && dow <= 5;
+  });
+  if (!weekdayCooks.length) return 0;
+
   const uniqueDays = [...new Set(
-    history.map((h) => h.cookedAt.toISOString().split('T')[0]),
+    weekdayCooks.map((h) => h.cookedAt.toISOString().split('T')[0]),
   )].sort().reverse();
 
-  let streak = 0;
-  const today = new Date().toISOString().split('T')[0];
-  let cursor = today;
+  const today = new Date();
+  let cursor = today.toISOString().split('T')[0];
+  // If today is weekend, start from last Friday
+  const todayDow = today.getDay();
+  if (todayDow === 0) { const f = new Date(today); f.setDate(f.getDate() - 2); cursor = f.toISOString().split('T')[0]; }
+  if (todayDow === 6) { const f = new Date(today); f.setDate(f.getDate() - 1); cursor = f.toISOString().split('T')[0]; }
 
+  let streak = 0;
   for (const day of uniqueDays) {
     if (day === cursor) {
       streak++;
-      const d = new Date(cursor);
-      d.setDate(d.getDate() - 1);
-      cursor = d.toISOString().split('T')[0];
-    } else {
+      cursor = prevWeekday(cursor);
+    } else if (day < cursor) {
       break;
     }
   }
@@ -122,18 +142,22 @@ function calcStreak(history: Array<{ cookedAt: Date }>): number {
 function calcLongestStreak(history: Array<{ cookedAt: Date }>): number {
   if (!history.length) return 0;
 
+  const weekdayCooks = history.filter((h) => {
+    const dow = h.cookedAt.getDay();
+    return dow >= 1 && dow <= 5;
+  });
+  if (!weekdayCooks.length) return 0;
+
   const uniqueDays = [...new Set(
-    history.map((h) => h.cookedAt.toISOString().split('T')[0]),
+    weekdayCooks.map((h) => h.cookedAt.toISOString().split('T')[0]),
   )].sort();
 
   let longest = 1;
   let current = 1;
 
   for (let i = 1; i < uniqueDays.length; i++) {
-    const prev = new Date(uniqueDays[i - 1]);
-    const curr = new Date(uniqueDays[i]);
-    const diffDays = Math.round((curr.getTime() - prev.getTime()) / 86_400_000);
-    if (diffDays === 1) {
+    const expected = prevWeekday(uniqueDays[i]);
+    if (expected === uniqueDays[i - 1]) {
       current++;
       if (current > longest) longest = current;
     } else {

@@ -4,12 +4,13 @@ import type { ShoppingItemBody } from '@shared/api';
 import type { PersonId, ShoppingEntry, Suggestion } from '@/types';
 
 interface ShoppingEntryDto {
-  id:   string;
-  name: string;
-  qty:  string;
-  cat:  string;
-  done: boolean;
-  by:   { personId: string } | null;
+  id:           string;
+  name:         string;
+  qty:          string;
+  cat:          string;
+  done:         boolean;
+  by:           { personId: string } | null;
+  ingredientId: string | null;
 }
 
 export interface ShoppingSnapshot {
@@ -19,12 +20,13 @@ export interface ShoppingSnapshot {
 
 export function toEntry(dto: ShoppingEntryDto): ShoppingEntry {
   return {
-    id:   dto.id,
-    name: dto.name,
-    qty:  dto.qty,
-    cat:  dto.cat,
-    done: dto.done,
-    by:   dto.cat === 'AI' ? 'ai' : (dto.by?.personId as PersonId) ?? 'other',
+    id:           dto.id,
+    name:         dto.name,
+    qty:          dto.qty,
+    cat:          dto.cat,
+    done:         dto.done,
+    by:           dto.cat === 'AI' ? 'ai' : (dto.by?.personId as PersonId) ?? 'other',
+    ingredientId: dto.ingredientId ?? undefined,
   };
 }
 
@@ -51,4 +53,10 @@ export async function deleteShoppingItem(id: string): Promise<void> {
 
 export async function clearDoneItems(): Promise<void> {
   await http.delete(ENDPOINTS.shopping.clearDone);
+}
+
+export async function checkoutShopping(
+  items: Array<{ ingredientId: string; purchasedQty: number }>,
+): Promise<void> {
+  await http.post(ENDPOINTS.shopping.checkout, { items });
 }

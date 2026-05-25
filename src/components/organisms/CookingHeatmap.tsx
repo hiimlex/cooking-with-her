@@ -20,9 +20,9 @@ function formatDate(iso: string): string {
   return date.toLocaleDateString('pt-BR', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-const CELL = 13;
-const GAP  = 3;
-const DAY_LABEL_W = 14;
+const CELL = 10;
+const GAP  = 2;
+const DAY_LABEL_W = 12;
 
 export interface HeatmapRecipe {
   id:   string;

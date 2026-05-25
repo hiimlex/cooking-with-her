@@ -6,24 +6,26 @@ import type { Ingredient, IngredientCat } from '@/types';
 export type { IngredientBody, PantryQuery };
 
 interface IngredientDto {
-  id:          string;
-  name:        string;
-  qty:         number;
-  unit:        string;
-  cat:         string;
-  expiry:      number;
-  monthlyBuy?: number | null;
+  id:               string;
+  name:             string;
+  qty:              number;
+  unit:             string;
+  cat:              string;
+  expiry:           number;
+  monthlyBuy?:      number | null;
+  alwaysAvailable?: boolean;
 }
 
 function toIngredient(dto: IngredientDto): Ingredient {
   return {
-    id:          dto.id,
-    name:        dto.name,
-    qty:         dto.qty,
-    unit:        dto.unit,
-    cat:         dto.cat as IngredientCat,
-    expiry:      dto.expiry,
-    monthlyBuy:  dto.monthlyBuy ?? undefined,
+    id:              dto.id,
+    name:            dto.name,
+    qty:             dto.qty,
+    unit:            dto.unit,
+    cat:             dto.cat as IngredientCat,
+    expiry:          dto.expiry,
+    monthlyBuy:      dto.monthlyBuy ?? undefined,
+    alwaysAvailable: dto.alwaysAvailable ?? false,
   };
 }
 

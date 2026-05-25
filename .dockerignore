@@ -1,0 +1,27 @@
+# Dependencies — rebuilt inside the container
+node_modules
+server/node_modules
+
+# Build artifacts
+dist
+dist-test
+
+# Dev tooling
+.git
+.gitignore
+*.local
+.env*
+!.env.example
+
+# Editor
+.vscode
+.idea
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SQLite dev database (container uses a named volume)
+server/prisma/dev.db
+server/prisma/dev.db-journal

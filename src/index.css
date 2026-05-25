@@ -47,6 +47,12 @@
 }
 
 @layer utilities {
+  /* Thin, visible scrollbar for overflow regions */
+  .thin-scrollbar { scrollbar-width: thin; scrollbar-color: var(--c-subtle) transparent; }
+  .thin-scrollbar::-webkit-scrollbar { width: 4px; }
+  .thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .thin-scrollbar::-webkit-scrollbar-thumb { background: var(--c-subtle); border-radius: 9999px; }
+
   .glass {
     background: color-mix(in srgb, var(--c-card) 72%, transparent);
     backdrop-filter: blur(24px) saturate(180%);

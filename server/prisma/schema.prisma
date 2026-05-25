@@ -3,8 +3,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // directUrl is used by Prisma Migrate to bypass PgBouncer (Vercel Postgres).
+  // Set it to the same value as DATABASE_URL when not using a pooler.
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── Auth & Couple ──────────────────────────────────────────────────────────

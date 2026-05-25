@@ -23,7 +23,10 @@ export function HomePage() {
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
 
-  const { recipes, latestEntry, isLoading } = useHomeData(filter, search);
+  const { recipes: allRecipes, latestEntry, isLoading } = useHomeData(filter, search);
+
+  // Na home, esconde receitas que não podem ser feitas (ingrediente obrigatório em falta)
+  const recipes = allRecipes.filter((r) => r.cookability !== 'unavailable');
 
   const favMutation = useMutation({
     mutationFn: toggleFavorite,
@@ -139,7 +142,16 @@ export function HomePage() {
 
       {/* Recipe grid */}
       <div className="px-[18px] pb-1">
-        <Section title={sectionTitle} count={recipes.length} padded={false} />
+        <Section
+          title={sectionTitle}
+          count={recipes.length}
+          padded={false}
+          kicker={
+            allRecipes.length > recipes.length
+              ? `${allRecipes.length - recipes.length} indisponível`
+              : undefined
+          }
+        />
       </div>
 
       {isLoading ? (

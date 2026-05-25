@@ -9,6 +9,7 @@ import { useRecipeDetail } from '@/hooks/useRecipeDetail';
 import { improveStepsAI } from '@/api/ai';
 import { toggleFavorite, updateRecipe } from '@/api/recipes';
 import { diffPT } from '@/utils/labels';
+import { formatQtyForUnit } from '@/utils/units';
 import type { FoodGlyphId, IngredientCat } from '@/types';
 
 export function RecipeDetailPage() {
@@ -168,8 +169,11 @@ export function RecipeDetailPage() {
                     </div>
                   )}
                 </div>
-                <div className="text-[11px] text-muted font-semibold text-center truncate w-full">
+                <div className="text-[11px] text-ink font-semibold text-center truncate w-full leading-tight">
                   {ing.ingredient.name.split(' ')[0]}
+                </div>
+                <div className="text-[10px] text-muted text-center leading-tight -mt-0.5">
+                  {formatQtyForUnit(ing.qty, ing.unit)} {ing.unit}
                 </div>
               </div>
             );

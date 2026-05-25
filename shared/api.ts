@@ -43,6 +43,7 @@ export const ENDPOINTS = {
     toggle:    (id: string) => `/shopping/${id}/toggle`,
     delete:    (id: string) => `/shopping/${id}`,
     clearDone: '/shopping/done',
+    checkout:  '/shopping/checkout',
   },
   history: {
     list: '/history',
@@ -138,6 +139,10 @@ export interface ShoppingItemBody {
   qty:           string;
   cat:           string;
   ingredientId?: string;
+}
+
+export interface CheckoutBody {
+  items: Array<{ ingredientId: string; purchasedQty: number }>;
 }
 
 export interface AIGenerateBody {

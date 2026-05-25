@@ -90,12 +90,13 @@ export interface HistoryEntry {
 }
 
 export interface ShoppingEntry {
-  id: string;
-  name: string;
-  qty: string;
-  cat: string;
-  done: boolean;
-  by: PersonId | 'ai' | 'other';
+  id:           string;
+  name:         string;
+  qty:          string;
+  cat:          string;
+  done:         boolean;
+  by:           PersonId | 'ai' | 'other';
+  ingredientId?: string;
 }
 
 export interface Suggestion {

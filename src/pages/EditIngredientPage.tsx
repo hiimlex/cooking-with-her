@@ -2,8 +2,8 @@ import { getPantry, updateIngredient } from "@/api/pantry";
 import { Button, Card, Chip, FoodIcon, Input, Label } from "@/components/atoms";
 import { FieldGroup, SubHeader } from "@/components/molecules";
 import { CAT_ICON, FOOD_GLYPHS, IcCheck } from "@/icons";
-import { UNITS } from "@/utils/units";
 import type { Ingredient, IngredientCat } from "@/types";
+import { UNITS } from "@/utils/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -39,10 +39,10 @@ export function EditIngredientPage() {
   const [unit, setUnit] = useState<string>("g");
   const [cat, setCat] = useState<IngredientCat>("Produce");
   const [expiry, setExpiry] = useState<number>(7);
-  const [monthlyBuy,      setMonthlyBuy]      = useState('');
-  const [hasMonthly,      setHasMonthly]      = useState(false);
+  const [monthlyBuy, setMonthlyBuy] = useState("");
+  const [hasMonthly, setHasMonthly] = useState(false);
   const [alwaysAvailable, setAlwaysAvailable] = useState(false);
-  const [ready,           setReady]           = useState(false);
+  const [ready, setReady] = useState(false);
 
   // Pre-populate when ingredient is found in cache
   useEffect(() => {
@@ -64,14 +64,14 @@ export function EditIngredientPage() {
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (payload: Parameters<typeof updateIngredient>[1]) =>
       updateIngredient(id, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['pantry'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["pantry"] }),
   });
 
   const handleSave = async () => {
     if (!name) return;
     await mutateAsync({
       name,
-      qty:            alwaysAvailable ? 0 : Number(qty),
+      qty: alwaysAvailable ? 0 : Number(qty),
       unit,
       cat,
       expiry,
@@ -163,21 +163,24 @@ export function EditIngredientPage() {
           />
         </FieldGroup>
 
-        <FieldGroup label="Sempre disponível" sub="Temperos e básicos que nunca acabam (sal, pimenta…)">
+        <FieldGroup
+          label="Sempre disponível"
+          sub="Temperos e básicos que nunca acabam (sal, pimenta…)"
+        >
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setAlwaysAvailable((v) => !v)}
               className={[
-                'w-11 h-6 rounded-full transition-colors flex-shrink-0',
-                alwaysAvailable ? 'bg-accent' : 'bg-subtle',
-              ].join(' ')}
+                "w-11 h-6 rounded-full transition-colors flex-shrink-0",
+                alwaysAvailable ? "bg-accent" : "bg-subtle",
+              ].join(" ")}
             >
               <span
                 className={[
-                  'block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5',
-                  alwaysAvailable ? 'translate-x-5' : 'translate-x-0',
-                ].join(' ')}
+                  "block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5",
+                  alwaysAvailable ? "translate-x-5" : "translate-x-0",
+                ].join(" ")}
               />
             </button>
             {alwaysAvailable && (
@@ -189,24 +192,24 @@ export function EditIngredientPage() {
         </FieldGroup>
 
         {!alwaysAvailable && (
-        <FieldGroup label="Quanto?">
-          <div className="flex items-start gap-2 mb-2">
-            <Input
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              placeholder="0"
-              type="number"
-              className="!w-[110px] text-center text-[17px] font-bold flex-shrink-0"
-            />
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {UNITS.map((u) => (
-              <Chip key={u} active={unit === u} onClick={() => setUnit(u)}>
-                {u}
-              </Chip>
-            ))}
-          </div>
-        </FieldGroup>
+          <FieldGroup label="Quanto?">
+            <div className="flex items-center justify-between gap-2.5">
+              <Input
+                value={qty}
+                onChange={(e) => setQty(e.target.value)}
+                placeholder="0"
+                type="number"
+                className="flex-1 text-center h-[40px] font-bold flex-shrink-0"
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {UNITS.map((u) => (
+                  <Chip key={u} active={unit === u} onClick={() => setUnit(u)}>
+                    {u}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+          </FieldGroup>
         )}
 
         <FieldGroup label="Categoria">

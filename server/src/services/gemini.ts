@@ -5,43 +5,43 @@
  * Docs: https://console.groq.com/docs/openai
  */
 
-const GROQ_MODEL   = 'llama-3.3-70b-versatile';
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface GeminiIngredient {
-  id:     string;
-  name:   string;
-  qty:    number;
-  unit:   string;
-  cat:    string;
+  id: string;
+  name: string;
+  qty: number;
+  unit: string;
+  cat: string;
   expiry: number;
 }
 
 export interface GeminiRecipeCandidate {
-  id:          string;
-  name:        string;
-  tag:         string;
-  time:        number;
-  difficulty:  string;
-  rating:      number;
-  servings?:   number;
+  id: string;
+  name: string;
+  tag: string;
+  time: number;
+  difficulty: string;
+  rating: number;
+  servings?: number;
   ingredients: Array<{ name: string; qty: number; unit: string }>;
 }
 
 export interface GeminiSuggestInput {
-  pantry:         GeminiIngredient[];
-  recipes:        GeminiRecipeCandidate[];
-  userPrompt:     string;
-  timeLimit:      number;
-  tags:           string[];
-  useWhatWeHave?: boolean;  // se false, a IA não fica restrita à despensa
+  pantry: GeminiIngredient[];
+  recipes: GeminiRecipeCandidate[];
+  userPrompt: string;
+  timeLimit: number;
+  tags: string[];
+  useWhatWeHave?: boolean; // se false, a IA não fica restrita à despensa
 }
 
 export interface RecipeSuggestion {
   recipeId: string;
-  why:      string;
+  why: string;
 }
 
 export interface GeminiSuggestOutput {
@@ -50,29 +50,35 @@ export interface GeminiSuggestOutput {
 
 export interface GeneratedStep {
   title: string;
-  desc:  string;
-  mins:  number;
+  desc: string;
+  mins: number;
 }
 
 export interface GeneratedIngredient {
   name: string;
-  qty:  number;
+  qty: number;
   unit: string;
 }
 
 export interface GeminiGeneratedRecipe {
-  name:        string;
-  tag:         'Brunch' | 'Lunch' | 'Dinner' | 'Snack' | 'Weekday' | 'AI';
-  time:        number;
-  difficulty:  'Easy' | 'Medium' | 'Hard';
-  servings:    number;
-  why:         string;
-  bg:          string;
-  accent:      string;
-  sprites:     string[];
-  nutrition:   { kcal: number; protein: number; carbs: number; fat: number; fiber: number };
+  name: string;
+  tag: "Brunch" | "Lunch" | "Dinner" | "Snack" | "Weekday" | "AI";
+  time: number;
+  difficulty: "Easy" | "Medium" | "Hard";
+  servings: number;
+  why: string;
+  bg: string;
+  accent: string;
+  sprites: string[];
+  nutrition: {
+    kcal: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+  };
   ingredients: GeneratedIngredient[];
-  steps:       GeneratedStep[];
+  steps: GeneratedStep[];
 }
 
 export interface GeminiGenerateOutput {
@@ -87,7 +93,7 @@ export class GeminiError extends Error {
     message: string,
   ) {
     super(message);
-    this.name = 'GeminiError';
+    this.name = "GeminiError";
   }
 }
 
@@ -95,30 +101,30 @@ export class GeminiError extends Error {
 
 async function callAI(apiKey: string, prompt: string): Promise<string> {
   const response = await fetch(GROQ_API_URL, {
-    method:  'POST',
+    method: "POST",
     headers: {
-      'Content-Type':  'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model:           GROQ_MODEL,
-      temperature:     0.7,
-      max_tokens:      2048,
-      response_format: { type: 'json_object' },
+      model: GROQ_MODEL,
+      temperature: 0.7,
+      max_tokens: 2048,
+      response_format: { type: "json_object" },
       messages: [
         {
-          role:    'system',
+          role: "system",
           content: [
-            'Você é a Nonna, assistente culinária de um casal brasileiro.',
-            'Sua especialidade é culinária brasileira: arroz, feijão, churrasco, moqueca, strogonoff, feijoada, cuscuz nordestino, tapioca, frango assado, macarronada e afins.',
-            'Quando a receita for internacional (italiana, japonesa, mexicana, árabe etc.), adapte os temperos e a base ao paladar brasileiro.',
-            'REGRA NUTRICIONAL INEGOCIÁVEL: toda receita criada ou melhorada deve ter uma base sólida de carboidratos (arroz, macarrão, batata, mandioca, pão, cuscuz, tapioca, inhame) E proteínas (frango, carne bovina, peixe, camarão, ovos, queijo, feijão, lentilha, grão-de-bico).',
-            'Nunca crie receita sem ao menos uma fonte de carbo e uma fonte de proteína.',
-            'Responda sempre em JSON válido.',
-          ].join(' '),
+            "Você é a Nonna, assistente culinária de um casal brasileiro.",
+            "Sua especialidade é culinária brasileira: arroz, feijão, churrasco, moqueca, strogonoff, feijoada, cuscuz nordestino, tapioca, frango assado, macarronada e afins.",
+            "Quando a receita for internacional (italiana, japonesa, mexicana, árabe etc.), adapte os temperos e a base ao paladar brasileiro.",
+            "REGRA NUTRICIONAL INEGOCIÁVEL: toda receita criada ou melhorada deve ter uma base sólida de carboidratos (arroz, macarrão, batata, mandioca, pão, cuscuz, tapioca, inhame) E proteínas (frango, carne bovina, peixe, camarão, ovos, queijo, feijão, lentilha, grão-de-bico).",
+            "Nunca crie receita sem ao menos uma fonte de carbo e uma fonte de proteína.",
+            "Responda sempre em JSON válido.",
+          ].join(" "),
         },
         {
-          role:    'user',
+          role: "user",
           content: prompt,
         },
       ],
@@ -126,21 +132,25 @@ async function callAI(apiKey: string, prompt: string): Promise<string> {
   });
 
   if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    const friendly = response.status === 429
-      ? 'A Nonna está descansando — limite de requisições atingido. Tente em alguns segundos.'
-      : response.status === 401 || response.status === 403
-      ? 'Chave do Groq inválida. Verifique o GROQ_API_KEY no .env.'
-      : `Groq API error ${response.status}`;
-    throw new GeminiError(response.status, friendly + (body ? `\n${body}` : ''));
+    const body = await response.text().catch(() => "");
+    const friendly =
+      response.status === 429
+        ? "A Nonna está descansando — limite de requisições atingido. Tente em alguns segundos."
+        : response.status === 401 || response.status === 403
+          ? "Chave do Groq inválida. Verifique o GROQ_API_KEY no .env."
+          : `Groq API error ${response.status}`;
+    throw new GeminiError(
+      response.status,
+      friendly + (body ? `\n${body}` : ""),
+    );
   }
 
-  const data = await response.json() as {
+  const data = (await response.json()) as {
     choices: Array<{ message: { content: string } }>;
   };
 
   const text = data.choices?.[0]?.message?.content;
-  if (!text) throw new Error('Groq returned an empty response');
+  if (!text) throw new Error("Groq returned an empty response");
   return text;
 }
 
@@ -150,19 +160,20 @@ export async function suggestRecipes(
   apiKey: string,
   input: GeminiSuggestInput,
 ): Promise<GeminiSuggestOutput> {
-  const expiringItems = input.pantry
-    .filter((i) => i.expiry <= 4)
-    .map((i) => `${i.name} (${i.expiry}d restantes)`)
-    .join(', ') || 'nenhum';
+  const expiringItems =
+    input.pantry
+      .filter((i) => i.expiry <= 4)
+      .map((i) => `${i.name} (${i.expiry}d restantes)`)
+      .join(", ") || "nenhum";
 
-  const pantryNames = input.pantry.map((i) => i.name).join(', ');
+  const pantryNames = input.pantry.map((i) => i.name).join(", ");
 
   const recipeList = input.recipes
     .map((r) => {
-      const ings = r.ingredients.map((i) => i.name).join(', ');
+      const ings = r.ingredients.map((i) => i.name).join(", ");
       return `- ID: "${r.id}" | Nome: "${r.name}" | Tempo: ${r.time}min | Tag: ${r.tag} | Ingredientes: ${ings}`;
     })
-    .join('\n');
+    .join("\n");
 
   const prompt = `
 Analise o contexto e sugira as melhores receitas em ordem de prioridade.
@@ -173,8 +184,8 @@ Itens vencendo em breve: ${expiringItems}
 
 ## Preferências do usuário
 Tempo máximo: ${input.timeLimit} minutos
-Tags escolhidas: ${input.tags.join(', ') || 'nenhuma'}
-Pedido em texto: "${input.userPrompt || 'sem pedido específico'}"
+Tags escolhidas: ${input.tags.join(", ") || "nenhuma"}
+Pedido em texto: "${input.userPrompt || "sem pedido específico"}"
 
 ## Receitas candidatas
 ${recipeList}
@@ -193,11 +204,11 @@ Formato obrigatório:
 {"suggestions":[{"recipeId":"<id exato>","why":"<motivo em pt-BR>"}]}
 `;
 
-  const raw    = await callAI(apiKey, prompt);
+  const raw = await callAI(apiKey, prompt);
   const parsed = JSON.parse(raw) as GeminiSuggestOutput;
 
   if (!Array.isArray(parsed.suggestions)) {
-    throw new Error('AI returned unexpected shape for suggestions');
+    throw new Error("AI returned unexpected shape for suggestions");
   }
 
   return parsed;
@@ -209,45 +220,50 @@ export async function generateRecipe(
   apiKey: string,
   input: GeminiSuggestInput,
 ): Promise<GeminiGenerateOutput> {
-  const pantryNames    = input.pantry.map((i) => `${i.name} (${i.qty} ${i.unit})`).join(', ');
-  const expiringItems  = input.pantry
-    .filter((i) => i.expiry <= 4)
-    .map((i) => i.name)
-    .join(', ') || 'nenhum';
+  const pantryNames = input.pantry
+    .map((i) => `${i.name} (${i.qty} ${i.unit})`)
+    .join(", ");
+  const expiringItems =
+    input.pantry
+      .filter((i) => i.expiry <= 4)
+      .map((i) => i.name)
+      .join(", ") || "nenhum";
 
-  const hasSpecificRequest = input.userPrompt && input.userPrompt.trim().length > 0;
-  const useOnlyPantry      = input.useWhatWeHave !== false; // true por padrão
+  const hasSpecificRequest =
+    input.userPrompt && input.userPrompt.trim().length > 0;
+  const useOnlyPantry = input.useWhatWeHave !== false; // true por padrão
   const requestBlock = hasSpecificRequest
     ? `## ⭐ OBJETIVO PRINCIPAL — PRIORIDADE MÁXIMA
 O casal pediu especificamente: "${input.userPrompt.trim()}"
 Crie EXATAMENTE essa receita (ou a variação mais fiel possível ao pedido).
-${useOnlyPantry
-  ? 'Use ingredientes da despensa quando compatíveis. Se faltarem itens essenciais para o prato pedido (ex: farinha, chocolate, queijo), INCLUA-OS MESMO ASSIM na lista de ingredientes — eles serão marcados como "fora do estoque" para compra futura.'
-  : 'Inclua todos os ingredientes necessários para o prato, independentemente do que há na despensa.'
+${
+  useOnlyPantry
+    ? 'Use ingredientes da despensa quando compatíveis. Se faltarem itens essenciais para o prato pedido (ex: farinha, chocolate, queijo), INCLUA-OS MESMO ASSIM na lista de ingredientes — eles serão marcados como "fora do estoque" para compra futura.'
+    : "Inclua todos os ingredientes necessários para o prato, independentemente do que há na despensa."
 }
 NÃO substitua o prato por outro "parecido". Se pediram bolo de chocolate, entregue bolo de chocolate.
 `
     : `## Objetivo
-${useOnlyPantry ? 'Crie uma receita usando principalmente os ingredientes disponíveis na despensa.' : 'Crie uma receita saborosa para o casal.'} Me surpreenda com algo gostoso dentro das preferências abaixo.
+${useOnlyPantry ? "Crie uma receita usando principalmente os ingredientes disponíveis na despensa." : "Crie uma receita saborosa para o casal."} Me surpreenda com algo gostoso dentro das preferências abaixo.
 `;
 
   const prompt = `
 ${requestBlock}
 ## Despensa
 Disponível: ${pantryNames}
-${expiringItems !== 'nenhum' ? `Vencendo em breve (use se compatível): ${expiringItems}` : ''}
+${expiringItems !== "nenhum" ? `Vencendo em breve (use se compatível): ${expiringItems}` : ""}
 
 ## Restrições
 Tempo máximo: ${input.timeLimit} minutos
-Tags / clima: ${input.tags.filter((t) => t !== 'usepantry').join(', ') || 'nenhuma'}
+Tags / clima: ${input.tags.filter((t) => t !== "usepantry").join(", ") || "nenhuma"}
 
-## Foco culinário${hasSpecificRequest ? ' (secundário ao pedido acima)' : ''}
+## Foco culinário${hasSpecificRequest ? " (secundário ao pedido acima)" : ""}
 - Prefira receitas brasileiras ou adaptadas ao paladar brasileiro
 - OBRIGATÓRIO: toda receita deve ter ao menos UMA fonte de carboidrato (arroz, macarrão, batata, farinha, pão, mandioca, aveia) E ao menos UMA fonte de proteína (frango, carne, peixe, ovos, queijo, feijão, leite) — EXCETO se o pedido for explicitamente uma sobremesa ou prato sem proteína
 - Mínimo 20 g de proteína e 35 g de carboidratos por porção (adapte para sobremesas: foco em carbo, proteína via ovos/leite)
 
 ## Regras de unidades — USE APENAS ESTAS, exatamente como escritas
-unid · g · ml · kg · L · xícara · col. sopa · col. chá · dente · fatia · ramo
+unid · g · ml · kg · L · xícara · col. sopa · col. chá
 
 PROIBIDO: "a gosto", "pitada", "pé de", "caixa de", "maço", "porção", "punhado" ou qualquer outra unidade.
 Se um ingrediente é usado "a gosto" (sal, pimenta), expresse a quantidade real: "1 col. chá de sal", "0.5 col. chá de pimenta".
@@ -279,11 +295,11 @@ Formato obrigatório:
 {"recipe":{"name":"","tag":"Weekday","time":0,"difficulty":"Easy","servings":2,"why":"","bg":"#FFF3CD","accent":"#E8A000","sprites":["Rice"],"nutrition":{"kcal":0,"protein":0,"carbs":0,"fat":0,"fiber":0},"ingredients":[{"name":"","qty":0,"unit":""}],"steps":[{"title":"","desc":"","mins":0}]}}
 `;
 
-  const raw    = await callAI(apiKey, prompt);
+  const raw = await callAI(apiKey, prompt);
   const parsed = JSON.parse(raw) as GeminiGenerateOutput;
 
   if (!parsed.recipe?.name) {
-    throw new Error('AI returned unexpected shape for generated recipe');
+    throw new Error("AI returned unexpected shape for generated recipe");
   }
 
   return parsed;
@@ -293,30 +309,30 @@ Formato obrigatório:
 
 export interface ImproveRecipePantryItem {
   name: string;
-  qty:  number;
+  qty: number;
   unit: string;
-  cat:  string;
+  cat: string;
 }
 
 export interface ImproveRecipeInput {
   recipeName: string;
-  pantry:     ImproveRecipePantryItem[];
+  pantry: ImproveRecipePantryItem[];
 }
 
 export interface AIRecipeIngredient {
   name: string;
-  qty:  number;
+  qty: number;
   unit: string;
 }
 
 export interface AIImprovedRecipe {
-  tag:         'Brunch' | 'Lunch' | 'Dinner' | 'Snack' | 'Weekday' | 'AI';
-  time:        number;
-  difficulty:  'Easy' | 'Medium' | 'Hard';
-  servings:    number;
-  why:         string;
+  tag: "Brunch" | "Lunch" | "Dinner" | "Snack" | "Weekday" | "AI";
+  time: number;
+  difficulty: "Easy" | "Medium" | "Hard";
+  servings: number;
+  why: string;
   ingredients: AIRecipeIngredient[];
-  steps:       GeneratedStep[];
+  steps: GeneratedStep[];
 }
 
 export interface ImproveRecipeOutput {
@@ -325,11 +341,14 @@ export interface ImproveRecipeOutput {
 
 export async function improveRecipe(
   apiKey: string,
-  input:  ImproveRecipeInput,
+  input: ImproveRecipeInput,
 ): Promise<ImproveRecipeOutput> {
-  const pantryList = input.pantry.length > 0
-    ? input.pantry.map((i) => `- ${i.name}: ${i.qty} ${i.unit} (${i.cat})`).join('\n')
-    : 'Despensa vazia';
+  const pantryList =
+    input.pantry.length > 0
+      ? input.pantry
+          .map((i) => `- ${i.name}: ${i.qty} ${i.unit} (${i.cat})`)
+          .join("\n")
+      : "Despensa vazia";
 
   const prompt = `Você é a Nonna, especialista culinária de um casal brasileiro. Crie uma receita completa para "${input.recipeName}".
 
@@ -379,11 +398,11 @@ Se um ingrediente é usado "a gosto" (sal, pimenta), expresse a quantidade real:
 Formato obrigatório (JSON válido):
 {"recipe":{"tag":"Weekday","time":30,"difficulty":"Easy","servings":2,"why":"","ingredients":[{"name":"","qty":0,"unit":""}],"steps":[{"title":"","desc":"","mins":0}]}}`;
 
-  const raw    = await callAI(apiKey, prompt);
+  const raw = await callAI(apiKey, prompt);
   const parsed = JSON.parse(raw) as ImproveRecipeOutput;
 
   if (!parsed.recipe?.ingredients?.length || !parsed.recipe?.steps?.length) {
-    throw new Error('AI returned unexpected shape for improved recipe');
+    throw new Error("AI returned unexpected shape for improved recipe");
   }
 
   return parsed;
@@ -392,13 +411,13 @@ Formato obrigatório (JSON válido):
 // ─── Improve existing steps ───────────────────────────────────────────────────
 
 export interface ImproveStepsInput {
-  recipeName:  string;
-  steps?:      Array<{ title: string; desc: string; mins: number }>;
+  recipeName: string;
+  steps?: Array<{ title: string; desc: string; mins: number }>;
   ingredients?: Array<{ name: string; qty: number; unit: string }>;
-  tag?:        string;
-  time?:       number;
+  tag?: string;
+  time?: number;
   difficulty?: string;
-  servings?:   number;
+  servings?: number;
 }
 
 export interface ImproveStepsOutput {
@@ -409,31 +428,42 @@ export async function improveSteps(
   apiKey: string,
   input: ImproveStepsInput,
 ): Promise<ImproveStepsOutput> {
-  const hasSteps   = input.steps && input.steps.length > 0;
-  const stepsList  = hasSteps
-    ? input.steps!.map((s, i) => `${i + 1}. [${s.title}] (${s.mins}min): ${s.desc}`).join('\n')
-    : 'Nenhum passo definido ainda.';
+  const hasSteps = input.steps && input.steps.length > 0;
+  const stepsList = hasSteps
+    ? input
+        .steps!.map(
+          (s, i) => `${i + 1}. [${s.title}] (${s.mins}min): ${s.desc}`,
+        )
+        .join("\n")
+    : "Nenhum passo definido ainda.";
 
-  const ingList = input.ingredients && input.ingredients.length > 0
-    ? input.ingredients.map((i) => `${i.qty} ${i.unit} de ${i.name}`).join(', ')
-    : 'não especificados';
+  const ingList =
+    input.ingredients && input.ingredients.length > 0
+      ? input.ingredients
+          .map((i) => `${i.qty} ${i.unit} de ${i.name}`)
+          .join(", ")
+      : "não especificados";
 
   const context = [
-    input.tag        && `Tipo: ${input.tag}`,
-    input.time       && `Tempo total: ${input.time} min`,
+    input.tag && `Tipo: ${input.tag}`,
+    input.time && `Tempo total: ${input.time} min`,
     input.difficulty && `Dificuldade: ${input.difficulty}`,
-    input.servings   && `Porções: ${input.servings}`,
-  ].filter(Boolean).join(' · ');
+    input.servings && `Porções: ${input.servings}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
-  const action = hasSteps ? 'Quebre e melhore os passos abaixo' : 'Crie um passo a passo detalhado';
+  const action = hasSteps
+    ? "Quebre e melhore os passos abaixo"
+    : "Crie um passo a passo detalhado";
 
   const prompt = `Você é a Nonna, uma cozinheira experiente. ${action} para a receita "${input.recipeName}".
 
 ## Informações da receita
-${context || 'Sem informações adicionais'}
+${context || "Sem informações adicionais"}
 Ingredientes: ${ingList}
 
-${hasSteps ? `## Passos atuais\n${stepsList}` : ''}
+${hasSteps ? `## Passos atuais\n${stepsList}` : ""}
 
 ## Regras OBRIGATÓRIAS de separação de passos
 - Cada passo = EXATAMENTE UMA ação física de preparo. Exemplos CORRETOS: "Picar a cebola", "Refogar o alho", "Temperar o frango", "Grelhar o peixe". Exemplos ERRADOS: "Picar a cebola e refogar" (duas ações = proibido).
@@ -455,11 +485,11 @@ ${hasSteps ? `## Passos atuais\n${stepsList}` : ''}
 Formato obrigatório:
 {"steps":[{"title":"","desc":"","mins":0}]}`;
 
-  const raw    = await callAI(apiKey, prompt);
+  const raw = await callAI(apiKey, prompt);
   const parsed = JSON.parse(raw) as ImproveStepsOutput;
 
   if (!Array.isArray(parsed.steps) || parsed.steps.length === 0) {
-    throw new Error('AI returned unexpected shape for improved steps');
+    throw new Error("AI returned unexpected shape for improved steps");
   }
 
   return parsed;
