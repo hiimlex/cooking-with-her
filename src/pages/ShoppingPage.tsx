@@ -205,6 +205,7 @@ export function ShoppingPage() {
           })),
         );
         qc.invalidateQueries({ queryKey: ["pantry"] });
+        qc.invalidateQueries({ queryKey: ["shopping"] });
       } else {
         await clearDone();
       }

@@ -18,6 +18,13 @@ import { store } from "./store";
 import "./index.css";
 import "./registerSW";
 
+// Fire-and-forget: ping /health as soon as the app loads so the server wakes
+// up while the user is still on the login screen (cold-start on free hosting).
+(function warmUpServer() {
+  const base = import.meta.env.VITE_API_URL ?? 'http://localhost:3333';
+  fetch(`${base}/health`, { method: 'GET', cache: 'no-store' }).catch(() => {/* best-effort */});
+}());
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 1000 * 60 * 5 },

@@ -250,13 +250,13 @@ const aiRoutes: FastifyPluginAsync = async (server) => {
         },
       });
 
+      send({ total: recipeIngredients.length });
+
       if (recipeIngredients.length === 0) {
         send({ done: true, count: 0 });
         raw.end();
         return reply;
       }
-
-      send({ total: recipeIngredients.length });
 
       // ── Compatible conversion: math cascade already ran → confirm each recipe ──
       if (MATH_PAIRS[oldUnit] === newUnit) {
