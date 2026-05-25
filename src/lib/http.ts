@@ -14,9 +14,11 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
+    const isLoginRoute = window.location.pathname === import.meta.env.BASE_URL ||
+      window.location.pathname === import.meta.env.BASE_URL.replace(/\/$/, '');
+    if (error.response?.status === 401 && !isLoginRoute) {
       localStorage.removeItem('cwh_token');
-      window.location.href = '/login';
+      window.location.href = import.meta.env.BASE_URL;
     }
     return Promise.reject(error);
   },
