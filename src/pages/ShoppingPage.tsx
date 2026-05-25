@@ -63,7 +63,7 @@ export function ShoppingPage() {
 
   const queuedNames = new Set(open.map((i) => i.name.toLowerCase()));
   const outOfStock = pantryItems.filter(
-    (i) => i.qty === 0 && !queuedNames.has(i.name.toLowerCase()),
+    (i) => i.qty === 0 && !i.alwaysAvailable && !queuedNames.has(i.name.toLowerCase()),
   );
 
   const outOfStockNames = new Set(outOfStock.map((i) => i.name.toLowerCase()));
