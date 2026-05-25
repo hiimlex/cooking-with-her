@@ -22,8 +22,13 @@ export async function buildApp(): Promise<FastifyInstance> {
       : { level: 'warn' },
   });
 
+  const rawOrigin = process.env.CORS_ORIGIN;
+  const corsOrigin: string | RegExp | boolean = rawOrigin
+    ? new URL(rawOrigin).origin
+    : true;
+
   await app.register(cors, {
-    origin:      process.env.CORS_ORIGIN ?? true,
+    origin:      corsOrigin,
     credentials: true,
   });
 
