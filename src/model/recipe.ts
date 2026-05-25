@@ -65,11 +65,12 @@ export interface RecipeDto {
 }
 
 export interface HistoryEntryDto {
-  id:       string;
-  cookedAt: string;
-  rating:   number;
-  note?:    string;
-  recipeId: string;
+  id:        string;
+  cookedAt:  string;
+  rating:    number;
+  note?:     string;
+  mealType:  'dinner' | 'free';
+  recipeId:  string;
   recipe: {
     id:      string;
     name:    string;

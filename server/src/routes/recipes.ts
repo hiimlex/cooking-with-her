@@ -210,7 +210,7 @@ const recipesRoutes: FastifyPluginAsync = async (server) => {
   server.post('/:id/finish', auth, async (request, reply) => {
     const { id }     = request.params as { id: string };
     const { userId } = request.user;
-    const { rating = 5, note } = request.body as { rating?: number; note?: string };
+    const { rating = 5, note, mealType = 'dinner' } = request.body as { rating?: number; note?: string; mealType?: string };
 
     const userExists = await server.prisma.user.findUnique({ where: { id: userId } });
     if (!userExists) return reply.status(401).send({ error: 'Sessão expirada. Faça login novamente.' });
@@ -249,7 +249,7 @@ const recipesRoutes: FastifyPluginAsync = async (server) => {
 
     const [entry] = await Promise.all([
       server.prisma.historyEntry.create({
-        data:    { recipeId: id, byId: userId, rating, note },
+        data:    { recipeId: id, byId: userId, rating, note, mealType },
         include: { recipe: { include: { sprites: true } }, by: true },
       }),
       server.prisma.recipe.update({

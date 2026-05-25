@@ -17,17 +17,20 @@ const statsRoutes: FastifyPluginAsync = async (server) => {
       include: { recipe: true, by: true },
     });
 
-    const totalCooked = allHistory.length;
+    // Stats are computed only from guided dinners; free/avulso entries are excluded.
+    const dinnerHistory = allHistory.filter((h: any) => (h.mealType ?? 'dinner') === 'dinner');
+
+    const totalCooked = dinnerHistory.length;
     const avgRating   = totalCooked
-      ? allHistory.reduce((s: number, h: any) => s + h.rating, 0) / totalCooked
+      ? dinnerHistory.reduce((s: number, h: any) => s + h.rating, 0) / totalCooked
       : 0;
 
     // Per-person counts
-    const byAlex = allHistory.filter((h: any) => h.by.personId === 'alex').length;
-    const byYuka = allHistory.filter((h: any) => h.by.personId === 'yuka').length;
+    const byAlex = dinnerHistory.filter((h: any) => h.by.personId === 'alex').length;
+    const byYuka = dinnerHistory.filter((h: any) => h.by.personId === 'yuka').length;
 
     // Current streak — consecutive days with at least one cook
-    const streak = calcStreak(allHistory);
+    const streak = calcStreak(dinnerHistory);
 
     // This week count — Monday to Friday only
     const now = new Date();
@@ -35,7 +38,7 @@ const statsRoutes: FastifyPluginAsync = async (server) => {
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - daysSinceMonday);
     weekStart.setHours(0, 0, 0, 0);
-    const weekCount = allHistory.filter((h: any) => {
+    const weekCount = dinnerHistory.filter((h: any) => {
       const d   = new Date(h.cookedAt);
       const dow = d.getDay();
       return d >= weekStart && dow >= 1 && dow <= 5;
@@ -43,9 +46,9 @@ const statsRoutes: FastifyPluginAsync = async (server) => {
 
     const couple = await server.prisma.couple.findUnique({ where: { id: coupleId } });
 
-    // Top recipes
+    // Top recipes (dinners only)
     const recipeCounts: Record<string, number> = {};
-    for (const h of allHistory) {
+    for (const h of dinnerHistory) {
       recipeCounts[h.recipeId] = (recipeCounts[h.recipeId] ?? 0) + 1;
     }
     const topRecipes = Object.entries(recipeCounts)
@@ -53,9 +56,9 @@ const statsRoutes: FastifyPluginAsync = async (server) => {
       .slice(0, 3)
       .map(([id]) => id);
 
-    // Cuisine mix by tag
+    // Cuisine mix by tag (dinners only)
     const tagCounts: Record<string, number> = {};
-    for (const h of allHistory) {
+    for (const h of dinnerHistory) {
       const tag = h.recipe.tag;
       tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
     }
@@ -69,14 +72,14 @@ const statsRoutes: FastifyPluginAsync = async (server) => {
     };
     const cuisineMix = Object.entries(tagCounts).map(([name, count]) => ({
       name,
-      pct:   Math.round((count / totalCooked) * 100),
+      pct:   Math.round((count / (totalCooked || 1)) * 100),
       color: tagColors[name] ?? '#888',
     }));
 
-    // Heatmap — last 90 days
+    // Heatmap — last 90 days (all entries so a full picture of activity is shown)
     const { heatmap, heatmapRecipes } = buildHeatmap(allHistory);
 
-    const longestStreak = calcLongestStreak(allHistory);
+    const longestStreak = calcLongestStreak(dinnerHistory);
 
     return reply.send({
       totalCooked,

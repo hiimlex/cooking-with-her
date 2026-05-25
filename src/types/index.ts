@@ -81,12 +81,15 @@ export interface Utensil {
   emoji: string;
 }
 
+export type MealType = 'dinner' | 'free';
+
 export interface HistoryEntry {
   recipeId: string;
-  by: PersonId;
-  daysAgo: number;
-  rating: number;
-  note?: string;
+  by:       PersonId;
+  daysAgo:  number;
+  rating:   number;
+  note?:    string;
+  mealType: MealType;
 }
 
 export interface ShoppingEntry {

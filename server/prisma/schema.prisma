@@ -158,6 +158,7 @@ model HistoryEntry {
   cookedAt DateTime @default(now())
   rating   Float
   note     String?
+  mealType String   @default("dinner") // 'dinner' | 'free'
 
   recipeId String
   recipe   Recipe @relation(fields: [recipeId], references: [id])

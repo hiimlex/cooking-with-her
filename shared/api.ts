@@ -10,6 +10,7 @@ export type PersonId      = 'alex' | 'yuka';
 export type IngredientCat = 'Produce' | 'Protein' | 'Dairy' | 'Pantry' | 'Spice' | 'Other';
 export type RecipeTag     = 'Brunch' | 'Lunch' | 'Dinner' | 'Snack' | 'Weekday' | 'AI';
 export type Difficulty    = 'Easy' | 'Medium' | 'Hard';
+export type MealType      = 'dinner' | 'free';
 export type SortOrder     = 'asc' | 'desc';
 export type PantrySort    = 'expiry' | 'name' | 'qty';
 
@@ -137,8 +138,9 @@ export interface RecipeBody {
 }
 
 export interface CookBody {
-  rating: number;
-  note?:  string;
+  rating:    number;
+  note?:     string;
+  mealType?: MealType;
 }
 
 export interface ShoppingItemBody {

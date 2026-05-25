@@ -15,6 +15,7 @@ export function CookCompletePage() {
 
   const { recipe, isLoading } = useRecipeDetail(id);
 
+  const [mealType,     setMealType]     = useState<'dinner' | 'free'>('dinner');
   const [rating,       setRating]       = useState(5);
   const [note,         setNote]         = useState('');
   const [photo,        setPhoto]        = useState<File | null>(null);
@@ -28,7 +29,7 @@ export function CookCompletePage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      await finishRecipe(id, { rating, note: note.trim() || undefined });
+      await finishRecipe(id, { rating, note: note.trim() || undefined, mealType });
 
       if (photo) {
         const photoUrl = await uploadMemoryPhoto(photo);
@@ -113,6 +114,36 @@ export function CookCompletePage() {
       </div>
 
       <div className="px-[18px] pt-4 pb-8 flex flex-col gap-3.5 relative z-[1]">
+
+        {/* Meal type */}
+        <Card className="p-4">
+          <div className="text-sm font-bold text-ink mb-3">Que refeição foi essa?</div>
+          <div className="flex gap-2">
+            {([
+              { value: 'dinner', emoji: '🍽️', label: 'Janta',  sub: 'Conta no streak' },
+              { value: 'free',   emoji: '🥪', label: 'Avulso', sub: 'Só pra registrar' },
+            ] as const).map(({ value, emoji, label, sub }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setMealType(value)}
+                className={[
+                  'flex-1 h-[72px] rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all',
+                  mealType === value
+                    ? 'bg-accent text-white shadow-sm'
+                    : 'bg-canvas text-muted',
+                ].join(' ')}
+              >
+                <span className="text-[22px] leading-none">{emoji}</span>
+                <span className="text-[12px] font-bold mt-1">{label}</span>
+                <span className={[
+                  'text-[10px] font-medium',
+                  mealType === value ? 'text-white/70' : 'text-subtle',
+                ].join(' ')}>{sub}</span>
+              </button>
+            ))}
+          </div>
+        </Card>
 
         {/* Rating */}
         <Card className="p-4">
