@@ -4,6 +4,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens ───────────────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --c-bg:     #faf8ff;
+  --c-canvas: #f3eefe;
+  --c-card:   #ffffff;
+  --c-sunken: #ede8f7;
+  /* Text */
+  --c-ink:    #1e1730;
+  --c-muted:  #6b6580;
+  --c-subtle: #9a94b0;
+  /* Accent – overridable */
+  --c-accent:      #7c3aed;
+  --c-accent-em:   #6d28d9;
+  --c-accent-tint: #f3eefe;
+}
+
+[data-theme="dark"] {
+  --c-bg:          #0e0c1a;
+  --c-canvas:      #17142a;
+  --c-card:        #1e1b30;
+  --c-sunken:      #2a2640;
+  --c-ink:         #f0eeff;
+  --c-muted:       #a09ab8;
+  --c-subtle:      #6b6580;
+  --c-accent-tint: color-mix(in srgb, var(--c-accent) 20%, transparent);
+}
+
 @layer base {
   html, body, #root {
     @apply h-full;
@@ -20,12 +48,12 @@
 
 @layer utilities {
   .glass {
-    background: rgba(255, 255, 255, 0.72);
+    background: color-mix(in srgb, var(--c-card) 72%, transparent);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
   }
   .glass-soft {
-    background: rgba(255, 255, 255, 0.6);
+    background: color-mix(in srgb, var(--c-card) 60%, transparent);
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
   }

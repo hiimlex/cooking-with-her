@@ -56,6 +56,15 @@ export const IcTarget   = ({ size = 16, className }: IconProps) => <Ic size={siz
 export const IcRepo     = ({ size = 16, className }: IconProps) => <Ic size={size} className={className}><path d="M2 2.5A1.5 1.5 0 013.5 1H14v12H3.5a1.5 1.5 0 00-1.5 1.5V2.5z"/><path d="M2 13.5A1.5 1.5 0 013.5 12H14"/></Ic>;
 export const IcUtensils = ({ size = 16, className }: IconProps) => <Ic size={size} className={className}><path d="M4 1.5v6M4 7.5v7M2 1.5v4a2 2 0 004 0v-4"/><path d="M12 1.5v6c0 .5 1 .5 1 0V1.5"/><path d="M12 7.5v7"/></Ic>;
 export const IcFridge   = ({ size = 16, className }: IconProps) => <Ic size={size} className={className}><rect x="3" y="1.5" width="10" height="13" rx="1"/><path d="M3 6h10M5 3.5v1.5M5 8v3"/></Ic>;
+export const IcDog      = ({ size = 16, className }: IconProps) => (
+  <Ic size={size} className={className} vb="0 0 24 24" sw={1.8}>
+    <path d="M10 5.5C10 4.12 8.88 3 7.5 3S5 4.12 5 5.5v1L3 8v2l2 1v3.5A1.5 1.5 0 006.5 16H10v-2.5l1 .5 1-.5V16h3.5a1.5 1.5 0 001.5-1.5V11l2-1V8l-2-1.5v-1A1.5 1.5 0 0015 4h-1.5C13.5 5.5 12 6.5 12 6.5H10V5.5z"/>
+    <circle cx="8.5" cy="9" r="0.75" fill="currentColor" stroke="none"/>
+    <circle cx="14.5" cy="9" r="0.75" fill="currentColor" stroke="none"/>
+    <path d="M10 13.5c.5.5 1.5.5 2 0M7 20c0-1.5 1-2 2-2h6c1 0 2 .5 2 2"/>
+    <path d="M9 18v2M15 18v2"/>
+  </Ic>
+);
 export const IcPencil   = ({ size = 16, className }: IconProps) => <Ic size={size} className={className} d="M11.5 1.5L14 4l-9 9H2v-3l9.5-8.5z" />;
 export const IcGitBranch= ({ size = 16, className }: IconProps) => <Ic size={size} className={className}><circle cx="4" cy="3" r="1.5"/><circle cx="4" cy="13" r="1.5"/><circle cx="12" cy="5" r="1.5"/><path d="M4 4.5v7M5.5 5h2c2 0 2.5 1 2.5 2.5"/></Ic>;
 
@@ -81,6 +90,82 @@ export const IcSparkle = ({ size = 16, className }: IconProps) => (
     <path d="M12 9l.6 1.4L14 11l-1.4.6L12 13l-.6-1.4L10 11l1.4-.6L12 9z" />
   </Ic>
 );
+
+export const IcSun = ({ size = 16, className }: IconProps) => (
+  <Ic size={size} className={className}>
+    <circle cx="8" cy="8" r="2.5"/>
+    <path d="M8 1.5V3M8 13V14.5M1.5 8H3M13 8H14.5M3.7 3.7L4.8 4.8M11.2 11.2L12.3 12.3M12.3 3.7L11.2 4.8M4.8 11.2L3.7 12.3"/>
+  </Ic>
+);
+export const IcMoon = ({ size = 16, className }: IconProps) => (
+  <Ic size={size} className={className}>
+    <path d="M12.5 10.5A5.5 5.5 0 016 4a6.5 6.5 0 106.5 6.5z"/>
+  </Ic>
+);
+export const IcPan = ({ size = 16, className }: IconProps) => (
+  <Ic size={size} className={className}>
+    <circle cx="7" cy="9" r="5"/>
+    <path d="M12 9h3.5"/>
+  </Ic>
+);
+export const IcPot = ({ size = 16, className }: IconProps) => (
+  <Ic size={size} className={className}>
+    <path d="M3.5 7.5h9v4A1.5 1.5 0 0111 13H5a1.5 1.5 0 01-1.5-1.5v-4z"/>
+    <path d="M3.5 7.5h9M5.5 7.5V5.5h5v2"/>
+    <path d="M2 9H1M14 9h1"/>
+  </Ic>
+);
+export const IcKnife = ({ size = 16, className }: IconProps) => (
+  <Ic size={size} className={className}>
+    <path d="M3 13.5l9.5-9.5c.8-.8 2-.5 2 .8v0c0 .8-.5 1.2-1.2 1.5L4.5 15 3 13.5z"/>
+    <path d="M3 13.5L4.5 12"/>
+  </Ic>
+);
+export const IcScale = ({ size = 16, className }: IconProps) => (
+  <Ic size={size} className={className}>
+    <rect x="2" y="12" width="12" height="2" rx="1"/>
+    <path d="M8 12V8.5"/>
+    <rect x="4" y="6" width="8" height="2.5" rx="1"/>
+    <path d="M8 6V4.5M6 4.5h4"/>
+  </Ic>
+);
+export const IcBlender = ({ size = 16, className }: IconProps) => (
+  <Ic size={size} className={className}>
+    <path d="M5 2.5h6l-1 5.5H6L5 2.5z"/>
+    <path d="M6 8v5.5h4V8"/>
+    <path d="M5.5 13.5h5"/>
+    <path d="M11 3.5l2-1"/>
+  </Ic>
+);
+export const IcBoard = ({ size = 16, className }: IconProps) => (
+  <Ic size={size} className={className}>
+    <rect x="2" y="3.5" width="10" height="9" rx="1"/>
+    <path d="M12 6.5h2v3h-2"/>
+    <path d="M5 6.5h4M5 8.5h3M5 10.5h4"/>
+  </Ic>
+);
+export const IcGrater = ({ size = 16, className }: IconProps) => (
+  <Ic size={size} className={className}>
+    <rect x="4" y="2" width="8" height="12" rx="1"/>
+    <path d="M6.5 4.5l1-1.5M9.5 4.5l1-1.5M6.5 7l1-1.5M9.5 7l1-1.5M6.5 9.5l1-1.5M9.5 9.5l1-1.5"/>
+  </Ic>
+);
+
+// ── Utensil icon map — keyed by seed ID ───────────────────────────────────────
+export const UTENSIL_ICON: Record<string, (props: IconProps) => JSX.Element> = {
+  frigideira:      IcPan,
+  panela:          IcPot,
+  pressao:         IcPot,
+  forno:           IcFlame,
+  assadeira:       IcPan,
+  faca:            IcKnife,
+  tabua:           IcBoard,
+  liquidificador:  IcBlender,
+  ralador:         IcGrater,
+  cuscuzeira:      IcPot,
+  escorredor:      IcPot,
+  balanca:         IcScale,
+};
 
 // ── Tab bar icons (24px, thinner strokes) ─────────────────────────────────────
 const TAB = { size: 24, sw: 1.5 };

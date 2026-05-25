@@ -1,75 +1,202 @@
 import { FastifyPluginAsync } from 'fastify';
+import { generateRecipe, improveSteps, improveRecipe, GeminiError } from '../services/gemini';
+
+function normalizeForMatch(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+}
 
 const aiRoutes: FastifyPluginAsync = async (server) => {
   const auth = { preHandler: [server.authenticate] };
 
-  // POST /ai/generate — Ask Nonna to suggest recipes
+  // POST /ai/generate
   // Body: { prompt: string; timeMinutes: number; tags: string[]; useWhatWeHave?: boolean }
   server.post('/generate', auth, async (request, reply) => {
     const body = request.body as {
-      prompt: string;
-      timeMinutes: number;
-      tags: string[];
+      prompt:        string;
+      timeMinutes:   number;
+      tags:          string[];
       useWhatWeHave?: boolean;
     };
 
-    // Fetch pantry for context
-    const pantry = await server.prisma.ingredient.findMany({
-      orderBy: { expiry: 'asc' },
-    });
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return reply.status(503).send({
+        error: 'GROQ_API_KEY não configurada. Adicione a chave no .env do servidor.',
+      });
+    }
 
-    // Base filter: respect timeMinutes constraint
-    const candidates = await server.prisma.recipe.findMany({
-      where: {
-        time: { lte: body.timeMinutes },
-        ...(body.tags.includes('spicy') ? {} : {}),
-      },
-      include: {
-        sprites:     true,
-        nutrition:   true,
-        ingredients: { include: { ingredient: true } },
-        steps:       { orderBy: { order: 'asc' } },
-        by:          true,
-      },
-      orderBy: { rating: 'desc' },
-      take: 10,
-    });
+    // ── Buscar contexto do banco ────────────────────────────────────────────
+    const [pantry, candidates] = await Promise.all([
+      server.prisma.ingredient.findMany({ orderBy: { expiry: 'asc' } }),
 
-    // Score recipes by pantry coverage when useWhatWeHave is set
-    const pantryIds = new Set(pantry.map((i: any) => i.id));
+      server.prisma.recipe.findMany({
+        where: { time: { lte: body.timeMinutes } },
+        include: {
+          sprites:     true,
+          nutrition:   true,
+          ingredients: { include: { ingredient: true } },
+          steps:       { orderBy: { order: 'asc' } },
+          by:          true,
+        },
+        orderBy: { rating: 'desc' },
+        take: 12,
+      }),
+    ]);
 
-    const scored = candidates.map((recipe: any) => {
-      const recipeIngIds = recipe.ingredients.map((ri: any) => ri.ingredientId);
-      const covered      = recipeIngIds.filter((id: string) => pantryIds.has(id)).length;
-      const coverage     = recipeIngIds.length ? covered / recipeIngIds.length : 0;
-      return { ...recipe, _score: body.useWhatWeHave ? coverage : recipe.rating };
-    });
+    const geminiInput = {
+      pantry:     pantry.map((i: any) => ({
+        id:     i.id,
+        name:   i.name,
+        qty:    i.qty,
+        unit:   i.unit,
+        cat:    i.cat,
+        expiry: i.expiry,
+      })),
+      recipes:    candidates.map((r: any) => ({
+        id:          r.id,
+        name:        r.name,
+        tag:         r.tag,
+        time:        r.time,
+        difficulty:  r.difficulty,
+        rating:      r.rating,
+        servings:    r.servings,
+        ingredients: r.ingredients.map((ri: any) => ({
+          name: ri.ingredient.name,
+          qty:  ri.qty,
+          unit: ri.unit,
+        })),
+      })),
+      userPrompt:     body.prompt ?? '',
+      timeLimit:      body.timeMinutes,
+      tags:           body.tags ?? [],
+      useWhatWeHave:  body.useWhatWeHave ?? true,
+    };
 
-    const results = scored
-      .sort((a: any, b: any) => b._score - a._score)
-      .slice(0, 3)
-      .map(({ _score, ...recipe }: any) => recipe);
+    const context = {
+      pantryItems:   pantry.length,
+      expiringItems: pantry.filter((i: any) => i.expiry <= 4).length,
+    };
 
-    return reply.send({
-      results,
-      context: {
-        pantryItems:   pantry.length,
-        expiringItems: pantry.filter((i: any) => i.expiry <= 4).length,
-      },
-    });
+    try {
+      const generated = await generateRecipe(apiKey, geminiInput);
+      return reply.send({ mode: 'generated', recipe: generated.recipe, context });
+
+    } catch (err) {
+      if (err instanceof GeminiError) {
+        const status = err.statusCode === 429 ? 429
+          : err.statusCode === 401 || err.statusCode === 403 ? 503
+          : 502;
+        return reply.status(status).send({ error: err.message });
+      }
+      throw err;
+    }
   });
 
-  // GET /ai/tags — available filter tags for Ask Nonna
+  // POST /ai/improve-steps
+  server.post('/improve-steps', auth, async (request, reply) => {
+    const body = request.body as {
+      recipeName:   string;
+      steps?:       Array<{ title: string; desc: string; mins: number }>;
+      ingredients?: Array<{ name: string; qty: number; unit: string }>;
+      tag?:         string;
+      time?:        number;
+      difficulty?:  string;
+      servings?:    number;
+    };
+
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return reply.status(503).send({
+        error: 'GROQ_API_KEY não configurada.',
+      });
+    }
+
+    try {
+      const result = await improveSteps(apiKey, {
+        recipeName:  body.recipeName,
+        steps:       body.steps,
+        ingredients: body.ingredients,
+        tag:         body.tag,
+        time:        body.time,
+        difficulty:  body.difficulty,
+        servings:    body.servings,
+      });
+      return reply.send(result);
+    } catch (err) {
+      if (err instanceof GeminiError) {
+        const status = err.statusCode === 429 ? 429
+          : err.statusCode === 401 || err.statusCode === 403 ? 503
+          : 502;
+        return reply.status(status).send({ error: err.message });
+      }
+      throw err;
+    }
+  });
+
+  // POST /ai/improve-recipe
+  server.post('/improve-recipe', auth, async (request, reply) => {
+    const body = request.body as { recipeName: string };
+
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return reply.status(503).send({ error: 'GROQ_API_KEY não configurada.' });
+    }
+
+    const pantry = await server.prisma.ingredient.findMany({
+      orderBy: { name: 'asc' },
+    });
+
+    try {
+      const result = await improveRecipe(apiKey, {
+        recipeName: body.recipeName,
+        pantry: pantry.map((i: any) => ({
+          name: i.name, qty: i.qty, unit: i.unit, cat: i.cat,
+        })),
+      });
+
+      // Match AI ingredient names against pantry using accent-insensitive comparison
+      const enrichedIngredients = result.recipe.ingredients.map((ing) => {
+        const norm  = normalizeForMatch(ing.name);
+        const match = pantry.find((p: any) => {
+          const pn = normalizeForMatch(p.name);
+          return pn === norm || pn.includes(norm) || norm.includes(pn);
+        });
+        return {
+          name:         ing.name,
+          qty:          ing.qty,
+          unit:         ing.unit,
+          ingredientId: match?.id   ?? null,
+          stockQty:     match?.qty  ?? null,
+          unit_stock:   match?.unit ?? null,
+          notInPantry:  !match,
+        };
+      });
+
+      return reply.send({ recipe: { ...result.recipe, ingredients: enrichedIngredients } });
+    } catch (err) {
+      if (err instanceof GeminiError) {
+        const status = err.statusCode === 429 ? 429
+          : err.statusCode === 401 || err.statusCode === 403 ? 503
+          : 502;
+        return reply.status(status).send({ error: err.message });
+      }
+      throw err;
+    }
+  });
+
+  // GET /ai/tags
   server.get('/tags', auth, async (_request, reply) => {
     const tags = [
-      { id: 'lazy-sunday',    label: 'Lazy Sunday',   group: 'mood'   },
-      { id: 'date-night',     label: 'Date night',    group: 'mood'   },
-      { id: 'comfort-food',   label: 'Comfort food',  group: 'mood'   },
-      { id: 'light-healthy',  label: 'Light & healthy',group: 'mood'  },
-      { id: 'spicy',          label: 'Spicy',         group: 'flavor' },
-      { id: 'use-what-we-have',label: 'Use what we have', group: 'mode'},
-      { id: 'surprise-us',    label: 'Surprise us',   group: 'mode'   },
-      { id: 'quick',          label: '< 20 min',      group: 'time'   },
+      { id: 'lazy-sunday',      label: 'Domingo preguiçoso', group: 'mood'   },
+      { id: 'date-night',       label: 'Jantar a dois',      group: 'mood'   },
+      { id: 'comfort-food',     label: 'Comida de conforto', group: 'mood'   },
+      { id: 'light-healthy',    label: 'Leve e saudável',    group: 'mood'   },
+      { id: 'spicy',            label: 'Apimentado',         group: 'flavor' },
+      { id: 'usepantry',        label: 'Usar o que tem',     group: 'mode'   },
+      { id: 'quick',            label: '< 20 min',           group: 'time'   },
     ];
 
     return reply.send(tags);

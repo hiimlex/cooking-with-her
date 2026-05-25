@@ -7,12 +7,15 @@ import {
   AddRecipePage,
   CookCompletePage,
   CookModePage,
+  EditIngredientPage,
+  EditRecipePage,
   HomePage,
   LoginPage,
   MemoriesPage,
   MyRecipesPage,
   PantryPage,
   RecipeDetailPage,
+  SettingsPage,
   ShoppingPage,
   StatsPage,
   UsPage,
@@ -54,13 +57,16 @@ export function AppRouter() {
         <Route path="/ai" element={<AIGeneratePage />} />
         <Route path="/ai/results" element={<AIResultsPage />} />
         <Route path="/recipe/:id" element={<RecipeDetailPage />} />
+        <Route path="/recipe/:id/edit" element={<EditRecipePage />} />
         <Route path="/cook/:id" element={<CookModePage />} />
         <Route path="/cook/:id/complete" element={<CookCompletePage />} />
         <Route path="/pantry/add" element={<AddIngredientPage />} />
+        <Route path="/pantry/edit/:id" element={<EditIngredientPage />} />
         <Route path="/us/recipes" element={<MyRecipesPage />} />
         <Route path="/us/recipes/add" element={<AddRecipePage />} />
         <Route path="/us/utensils" element={<UtensilsPage />} />
         <Route path="/us/memories" element={<MemoriesPage />} />
+        <Route path="/us/settings" element={<SettingsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getRecipes } from '@/api/recipes';
 import { getStats } from '@/api/stats';
 import { getHistory } from '@/api/history';
+import { recipeCookability } from '@/utils/cookability';
 import type { Recipe, FoodGlyphId, Difficulty, RecipeTag } from '@/types';
 import type { RecipeDto, HistoryEntryDto } from '@/model/recipe';
 
@@ -17,22 +18,24 @@ function useDebounce<T>(value: T, ms: number): T {
 
 function toRecipe(dto: RecipeDto): Recipe {
   return {
-    id:          dto.id,
-    name:        dto.name,
-    tag:         dto.tag as RecipeTag,
-    time:        dto.time,
-    difficulty:  dto.difficulty as Difficulty,
-    by:          dto.by.personId,
-    cookedCount: dto.cookedCount,
-    rating:      dto.rating,
-    bg:          dto.bg,
-    accent:      dto.accent,
-    servings:    dto.servings,
-    why:         dto.why,
-    nutrition:   dto.nutrition,
-    sprites:     dto.sprites.map((s) => s.sprite) as FoodGlyphId[],
-    ingredients: dto.ingredients.map((i) => ({ id: i.ingredient.id, qty: i.qty, unit: i.unit })),
-    steps:       dto.steps.map((s) => ({ t: s.title, d: s.desc, mins: s.mins })),
+    id:           dto.id,
+    name:         dto.name,
+    tag:          dto.tag as RecipeTag,
+    time:         dto.time,
+    difficulty:   dto.difficulty as Difficulty,
+    by:           dto.by.personId,
+    cookedCount:  dto.cookedCount,
+    rating:       dto.rating,
+    bg:           dto.bg,
+    accent:       dto.accent,
+    servings:     dto.servings,
+    why:          dto.why,
+    nutrition:    dto.nutrition,
+    sprites:      dto.sprites.map((s) => s.sprite) as FoodGlyphId[],
+    ingredients:  dto.ingredients.map((i) => ({ id: i.ingredient.id, qty: i.qty, unit: i.unit })),
+    steps:        dto.steps.map((s) => ({ t: s.title, d: s.desc, mins: s.mins })),
+    favorite:     dto.favorite ?? false,
+    cookability:  recipeCookability(dto),
   };
 }
 
@@ -60,8 +63,9 @@ export function useHomeData(filter: string, search: string) {
   const debouncedSearch = useDebounce(search, 300);
 
   const params = useMemo(() => {
-    if (filter === 'quick') return { timeMax: 25, search: debouncedSearch || undefined };
-    if (filter !== 'all')   return { tag: filter,  search: debouncedSearch || undefined };
+    if (filter === 'saved') return { favorite: 'true' as const, search: debouncedSearch || undefined };
+    if (filter === 'quick') return { timeMax: 25,               search: debouncedSearch || undefined };
+    if (filter !== 'all')   return { tag: filter,               search: debouncedSearch || undefined };
     return { search: debouncedSearch || undefined };
   }, [filter, debouncedSearch]);
 

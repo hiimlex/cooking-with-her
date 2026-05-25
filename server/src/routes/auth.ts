@@ -20,7 +20,7 @@ const authRoutes: FastifyPluginAsync = async (server) => {
     const couple = await server.prisma.couple.findUnique({ where: { code } });
 
     if (!couple) {
-      return reply.status(401).send({ error: 'Unauthorized', message: 'Wrong code 🐱' });
+      return reply.status(401).send({ error: 'Unauthorized', message: 'Palavra incorreta.' });
     }
 
     const user = await server.prisma.user.findUnique({

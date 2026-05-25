@@ -1,35 +1,63 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPantry, addIngredient, deleteIngredient, type IngredientBody } from '@/api/pantry';
 import type { Ingredient, IngredientCat } from '@/types';
 
 export function usePantry() {
-  const [cat, setCat]       = useState<'All' | IngredientCat>('All');
-  const [search, setSearch] = useState('');
+  const [cat,          setCat]          = useState<'All' | IngredientCat>('All');
+  const [search,       setSearch]       = useState('');
+  const [showZero,     setShowZero]     = useState(false);
+  const [debSearch,    setDebSearch]    = useState('');
+  const debTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const qc = useQueryClient();
 
-  const { data, isLoading, isError } = useQuery<Ingredient[]>({
+  // Debounce search for backend query
+  useEffect(() => {
+    if (debTimer.current) clearTimeout(debTimer.current);
+    debTimer.current = setTimeout(() => setDebSearch(search), 280);
+    return () => { if (debTimer.current) clearTimeout(debTimer.current); };
+  }, [search]);
+
+  // Full pantry — used for counts and expiring section
+  const { data: allData, isLoading, isError } = useQuery<Ingredient[]>({
     queryKey: ['pantry'],
     queryFn:  () => getPantry(),
   });
 
-  const ingredients = data ?? [];
+  // Search results from backend when search is active
+  const { data: searchData, isFetching: isSearching } = useQuery<Ingredient[]>({
+    queryKey: ['pantry-search', debSearch, cat !== 'All' ? cat : ''],
+    queryFn:  () => getPantry({
+      search: debSearch,
+      ...(cat !== 'All' ? { cat } : {}),
+    }),
+    enabled:   debSearch.trim().length > 0,
+    staleTime: 10_000,
+  });
 
-  const filtered = useMemo(
-    () =>
-      ingredients.filter(
-        (i) =>
-          (cat === 'All' || i.cat === cat) &&
-          i.name.toLowerCase().includes(search.toLowerCase()),
-      ),
-    [ingredients, cat, search],
-  );
+  const ingredients = allData ?? [];
+
+  const filtered = useMemo(() => {
+    let list: Ingredient[];
+
+    if (debSearch.trim().length > 0) {
+      // Use backend search results, filtered by cat if needed (backend already filters)
+      list = searchData ?? [];
+    } else {
+      // Local filter when no search
+      list = ingredients.filter(
+        (i) => cat === 'All' || i.cat === cat,
+      );
+    }
+
+    // Apply qty=0 filter on top
+    if (showZero) list = list.filter((i) => i.qty === 0);
+
+    return list;
+  }, [ingredients, searchData, debSearch, cat, showZero]);
 
   const expiring = useMemo(
-    () =>
-      ingredients
-        .filter((i) => i.expiry <= 4)
-        .sort((a, b) => a.expiry - b.expiry),
+    () => ingredients.filter((i) => i.expiry <= 4).sort((a, b) => a.expiry - b.expiry),
     [ingredients],
   );
 
@@ -48,13 +76,13 @@ export function usePantry() {
     filtered,
     expiring,
     isLoading,
+    isSearching,
     isError,
-    cat,
-    setCat,
-    search,
-    setSearch,
-    add:      addMutation.mutateAsync,
-    isAdding: addMutation.isPending,
-    remove:   removeMutation.mutate,
+    cat,          setCat,
+    search,       setSearch,
+    showZero,     setShowZero,
+    add:          addMutation.mutateAsync,
+    isAdding:     addMutation.isPending,
+    remove:       removeMutation.mutate,
   };
 }

@@ -1,3 +1,13 @@
+// Apply stored theme before React renders to avoid flash of unstyled content
+(function applyStoredTheme() {
+  const theme  = localStorage.getItem('cwh_theme')  ?? 'light';
+  const accent = localStorage.getItem('cwh_accent') ?? '#7c3aed';
+  const root   = document.documentElement;
+  if (theme === 'dark') root.dataset.theme = 'dark';
+  root.style.setProperty('--c-accent', accent);
+  root.style.setProperty('--c-accent-em', accent);
+}());
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";

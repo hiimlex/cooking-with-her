@@ -13,9 +13,9 @@ export function NutritionCard({ nutrition, perServing = true }: NutritionCardPro
   return (
     <>
       <div className="flex items-center justify-between mb-3 mt-5">
-        <h3 className="m-0 text-base font-extrabold text-ink tracking-[-0.3px]">Nutrition</h3>
+        <h3 className="m-0 text-base font-extrabold text-ink tracking-[-0.3px]">Nutrição</h3>
         <span className="text-[11px] text-subtle font-semibold">
-          {perServing ? 'per serving · approx.' : 'approx.'}
+          {perServing ? 'por porção · aprox.' : 'aprox.'}
         </span>
       </div>
       <Card className="p-4">
@@ -29,13 +29,13 @@ export function NutritionCard({ nutrition, perServing = true }: NutritionCardPro
           <MacroRing nutrition={nutrition} />
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <Macro label="Protein"  grams={nutrition.protein} color="#7c3aed" />
-          <Macro label="Carbs"    grams={nutrition.carbs}   color="#f59e0b" />
-          <Macro label="Fat"      grams={nutrition.fat}     color="#ff7eb9" />
+          <Macro label="Proteína" grams={nutrition.protein} color="#7c3aed" />
+          <Macro label="Carbos"   grams={nutrition.carbs}   color="#f59e0b" />
+          <Macro label="Gordura"  grams={nutrition.fat}     color="#ff7eb9" />
         </div>
         {nutrition.fiber !== undefined && (
           <div className="mt-2.5 pt-2.5 border-t border-dashed border-canvas flex justify-between text-xs text-muted">
-            <span>Fiber</span>
+            <span>Fibras</span>
             <span className="font-bold text-ink">{nutrition.fiber}g</span>
           </div>
         )}

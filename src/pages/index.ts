@@ -15,3 +15,6 @@ export * from './UtensilsPage';
 export * from './MyRecipesPage';
 export * from './MemoriesPage';
 export * from './AddRecipePage';
+export * from './SettingsPage';
+export * from './EditRecipePage';
+export * from './EditIngredientPage';

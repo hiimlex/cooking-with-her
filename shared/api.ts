@@ -30,9 +30,12 @@ export const ENDPOINTS = {
     list:   '/recipes',
     get:    (id: string) => `/recipes/${id}`,
     create: '/recipes',
+    fromAI: '/recipes/from-ai',
     update: (id: string) => `/recipes/${id}`,
     delete: (id: string) => `/recipes/${id}`,
-    cook:   (id: string) => `/recipes/${id}/cook`,
+    cook:     (id: string) => `/recipes/${id}/cook`,
+    finish:   (id: string) => `/recipes/${id}/finish`,
+    favorite: (id: string) => `/recipes/${id}/favorite`,
   },
   shopping: {
     list:      '/shopping',
@@ -48,8 +51,10 @@ export const ENDPOINTS = {
     get: '/stats',
   },
   ai: {
-    generate: '/ai/generate',
-    tags:     '/ai/tags',
+    generate:      '/ai/generate',
+    tags:          '/ai/tags',
+    improveSteps:  '/ai/improve-steps',
+    improveRecipe: '/ai/improve-recipe',
   },
   utensils: {
     list:   '/utensils',
@@ -82,6 +87,7 @@ export interface RecipesQuery {
   difficulty?: string;
   /** Axios serializes numbers to strings; server receives as string and uses parseInt */
   timeMax?:    number;
+  favorite?:   'true';
 }
 
 export interface HistoryQuery {
@@ -99,12 +105,13 @@ export interface LoginBody {
 }
 
 export interface IngredientBody {
-  name:        string;
-  qty:         number;
-  unit:        string;
-  cat:         IngredientCat;
-  expiry:      number;
-  monthlyBuy?: number;
+  name:             string;
+  qty:              number;
+  unit:             string;
+  cat:              IngredientCat;
+  expiry:           number;
+  monthlyBuy?:      number;
+  alwaysAvailable?: boolean;
 }
 
 export interface RecipeBody {

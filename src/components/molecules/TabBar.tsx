@@ -6,11 +6,11 @@ import {
 export type TabId = 'home' | 'pantry' | 'shop' | 'stats' | 'us';
 
 const TABS = [
-  { id: 'home',   label: 'Cook',   Icon: IcTabCook,   route: '/home' },
-  { id: 'pantry', label: 'Pantry', Icon: IcTabPantry, route: '/pantry' },
-  { id: 'shop',   label: 'Shop',   Icon: IcTabShop,   route: '/shopping' },
-  { id: 'stats',  label: 'Stats',  Icon: IcTabStats,  route: '/stats' },
-  { id: 'us',     label: 'Us',     Icon: IcTabUs,     route: '/us' },
+  { id: 'home',   label: 'Cozinhar', Icon: IcTabCook,   route: '/home' },
+  { id: 'pantry', label: 'Despensa', Icon: IcTabPantry, route: '/pantry' },
+  { id: 'shop',   label: 'Compras',  Icon: IcTabShop,   route: '/shopping' },
+  { id: 'stats',  label: 'Stats',    Icon: IcTabStats,  route: '/stats' },
+  { id: 'us',     label: 'Nós',      Icon: IcTabUs,     route: '/us' },
 ] as const;
 
 export function TabBar() {

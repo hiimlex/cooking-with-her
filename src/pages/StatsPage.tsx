@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Avatar, Card, FoodIcon, Rating } from "@/components/atoms";
-import { Badge, KPI, ScreenHeader, Section } from "@/components/molecules";
+import { KPI, ScreenHeader, Section } from "@/components/molecules";
 import { CookingHeatmap, HeatLegend } from "@/components/organisms";
 import { useStatsData } from "@/hooks/useStatsData";
 import { FOOD_GLYPHS, IcBook, IcFlame, IcStar, IcTarget } from "@/icons";
@@ -34,40 +34,40 @@ export function StatsPage() {
 
   return (
     <div>
-      <ScreenHeader title="Insights" sub="Your cooking, by the numbers" />
+      <ScreenHeader title="Estatísticas" sub="Suas cozinhadas em números" />
 
       {/* KPIs */}
       <div className="px-[18px] pt-3">
         <div className="grid grid-cols-2 gap-2.5">
           <KPI
-            label="Day streak"
+            label="Sequência"
             value={stats.streak}
-            sub={`Best: ${stats.longestStreak}`}
+            sub={`Recorde: ${stats.longestStreak}`}
             color="#c2410c"
             tint="#fff1e5"
             Icon={IcFlame}
           />
           <KPI
-            label="Avg rating"
+            label="Nota média"
             value={stats.avgRating.toFixed(1)}
-            sub="out of 5.0"
+            sub="de 5.0"
             color="#a16207"
             tint="#fef9c3"
             Icon={IcStar}
             filled
           />
           <KPI
-            label="This week"
+            label="Esta semana"
             value={`${stats.weekCount}/${stats.weekGoal}`}
-            sub="goal in sight"
+            sub="meta próxima"
             color="#15803d"
             tint="#dcfce7"
             Icon={IcTarget}
           />
           <KPI
-            label="Recipes"
+            label="Receitas"
             value={uniqueRecipesCount}
-            sub="saved together"
+            sub="feitas juntos"
             color="#6d28d9"
             tint="#f3eefe"
             Icon={IcBook}
@@ -77,7 +77,7 @@ export function StatsPage() {
 
       {/* Who cooks more */}
       <div className="px-[18px] pt-[22px]">
-        <Section title="Who's cooking" padded={false} />
+        <Section title="Quem cozinha mais" padded={false} />
         <Card className="p-[18px] mt-3">
           <div className="flex items-center gap-2.5 mb-2.5">
             <Avatar who="alex" size={32} />
@@ -111,7 +111,7 @@ export function StatsPage() {
       {/* Cuisine mix */}
       {stats.cuisineMix.length > 0 && (
         <div className="px-[18px] pt-5">
-          <Section title="What we love" padded={false} />
+          <Section title="O que amamos" padded={false} />
           <Card className="p-4 mt-3">
             <div className="flex h-3 rounded-full overflow-hidden mb-3.5">
               {stats.cuisineMix.map((c) => (
@@ -144,9 +144,9 @@ export function StatsPage() {
       {/* Heatmap */}
       <div className="px-[18px] pt-5">
         <Section
-          title="Cooking activity"
+          title="Atividade"
           padded={false}
-          action={<span className="text-xs text-muted">Last 12 weeks</span>}
+          action={<span className="text-xs text-muted">Últimas 12 semanas</span>}
         />
         <Card className="p-4 mt-3">
           <CookingHeatmap
@@ -162,7 +162,7 @@ export function StatsPage() {
       {topRecipes.length > 0 && (
         <div className="px-[18px] pt-5">
           <Section
-            title="Most cooked"
+            title="Mais cozinhadas"
             count={topRecipes.length}
             padded={false}
           />
@@ -191,7 +191,7 @@ export function StatsPage() {
                       {recipe.name}
                     </div>
                     <div className="text-xs text-muted mt-0.5 flex items-center gap-1">
-                      {count} cooks · <Rating value={avgRating} size={11} />
+                      {count}× cozinhada · <Rating value={avgRating} size={11} />
                     </div>
                   </div>
                 </Card>
@@ -201,16 +201,6 @@ export function StatsPage() {
         </div>
       )}
 
-      {/* Badges */}
-      <div className="px-[18px] pt-5">
-        <Section title="Badges" count="3 / 4" padded={false} />
-        <div className="mt-3 grid grid-cols-2 gap-2.5">
-          <Badge title="Streak Master"  sub="10 days in a row"  earned />
-          <Badge title="Salmon Wizard"  sub="10× fish dishes"   earned />
-          <Badge title="Italian Night"  sub="5 Italian recipes" earned />
-          <Badge title="Brunch Royalty" sub="Make 5 brunches"   progress={3} max={5} />
-        </div>
-      </div>
     </div>
   );
 }

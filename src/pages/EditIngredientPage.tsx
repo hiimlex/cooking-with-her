@@ -1,95 +1,152 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, Chip, FoodIcon, Input, Label } from '@/components/atoms';
-import { FieldGroup, SubHeader } from '@/components/molecules';
-import { CAT_ICON, FOOD_GLYPHS, IcCheck } from '@/icons';
-import { addIngredient } from '@/api/pantry';
-import { UNITS } from '@/utils/units';
-import type { IngredientCat } from '@/types';
+import { getPantry, updateIngredient } from "@/api/pantry";
+import { Button, Card, Chip, FoodIcon, Input, Label } from "@/components/atoms";
+import { FieldGroup, SubHeader } from "@/components/molecules";
+import { CAT_ICON, FOOD_GLYPHS, IcCheck } from "@/icons";
+import { UNITS } from "@/utils/units";
+import type { Ingredient, IngredientCat } from "@/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 const ICON_GROUPS: { label: string; cat: IngredientCat }[] = [
-  { label: 'Hortifruti', cat: 'Produce' },
-  { label: 'Proteína',   cat: 'Protein' },
-  { label: 'Laticínio',  cat: 'Dairy'   },
-  { label: 'Despensa',   cat: 'Pantry'  },
-  { label: 'Tempero',    cat: 'Spice'   },
-  { label: 'Outro',      cat: 'Other'   },
+  { label: "Hortifruti", cat: "Produce" },
+  { label: "Proteína", cat: "Protein" },
+  { label: "Laticínio", cat: "Dairy" },
+  { label: "Despensa", cat: "Pantry" },
+  { label: "Tempero", cat: "Spice" },
+  { label: "Outro", cat: "Other" },
 ];
-
-const NAME_GUESS: Record<string, IngredientCat> = {
-  tomato: 'Produce', onion: 'Produce', garlic: 'Spice',   carrot: 'Produce',
-  pepper: 'Produce', lemon: 'Produce', basil:  'Spice',   mint:   'Spice',
-  egg:    'Protein', chicken: 'Protein', salmon: 'Protein', fish: 'Protein',
-  cheese: 'Dairy',   parmesan: 'Dairy',  milk:  'Dairy',   cream: 'Dairy',
-  rice:   'Pantry',  pasta: 'Pantry',    bread: 'Pantry',
-};
 
 const SHELF_LIFE = [2, 5, 7, 14, 30, 90];
 
-export function AddIngredientPage() {
-  const navigate  = useNavigate();
-  const qc        = useQueryClient();
-  const [name,       setName]       = useState('');
-  const [qty,        setQty]        = useState('');
-  const [unit,       setUnit]       = useState<string>('unid');
-  const [cat,        setCat]        = useState<IngredientCat>('Produce');
-  const [expiry,     setExpiry]     = useState<number>(7);
+export function EditIngredientPage() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { id = "" } = useParams<{ id: string }>();
+
+  const { data: pantry = [], isLoading: pantryLoading } = useQuery<
+    Ingredient[]
+  >({
+    queryKey: ["pantry"],
+    queryFn: () => getPantry(),
+    staleTime: 60_000,
+  });
+
+  const ingredient = pantry.find((i) => i.id === id);
+
+  const [name, setName] = useState("");
+  const [qty, setQty] = useState("");
+  const [unit, setUnit] = useState<string>("g");
+  const [cat, setCat] = useState<IngredientCat>("Produce");
+  const [expiry, setExpiry] = useState<number>(7);
   const [monthlyBuy,      setMonthlyBuy]      = useState('');
   const [hasMonthly,      setHasMonthly]      = useState(false);
   const [alwaysAvailable, setAlwaysAvailable] = useState(false);
+  const [ready,           setReady]           = useState(false);
+
+  // Pre-populate when ingredient is found in cache
+  useEffect(() => {
+    if (ingredient && !ready) {
+      setName(ingredient.name);
+      setQty(String(ingredient.qty));
+      setUnit(ingredient.unit);
+      setCat(ingredient.cat);
+      setExpiry(ingredient.expiry);
+      setAlwaysAvailable(ingredient.alwaysAvailable ?? false);
+      if (ingredient.monthlyBuy) {
+        setHasMonthly(true);
+        setMonthlyBuy(String(ingredient.monthlyBuy));
+      }
+      setReady(true);
+    }
+  }, [ingredient, ready]);
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: addIngredient,
+    mutationFn: (payload: Parameters<typeof updateIngredient>[1]) =>
+      updateIngredient(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['pantry'] }),
   });
-
-  const handleNameChange = (v: string) => {
-    setName(v);
-    const match = Object.keys(NAME_GUESS).find((k) => v.toLowerCase().includes(k));
-    if (match) setCat(NAME_GUESS[match]);
-  };
 
   const handleSave = async () => {
     if (!name) return;
     await mutateAsync({
       name,
-      qty:    alwaysAvailable ? 0 : Number(qty),
+      qty:            alwaysAvailable ? 0 : Number(qty),
       unit,
       cat,
       expiry,
       alwaysAvailable,
-      ...(hasMonthly && monthlyBuy ? { monthlyBuy: Number(monthlyBuy) } : {}),
+      ...(hasMonthly && monthlyBuy
+        ? { monthlyBuy: Number(monthlyBuy) }
+        : { monthlyBuy: undefined }),
     });
-    navigate('/pantry');
+    navigate("/pantry");
   };
+
+  if (pantryLoading && !ready) {
+    return (
+      <div className="pb-[110px] bg-bg min-h-full">
+        <SubHeader
+          onBack={() => navigate(-1 as never)}
+          title="Editar ingrediente"
+        />
+        <div className="px-[18px] pb-[22px]">
+          <div className="h-[100px] bg-canvas rounded-3xl animate-pulse" />
+        </div>
+        <div className="px-[18px] flex flex-col gap-[18px]">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <div className="h-3.5 w-24 bg-canvas rounded-lg animate-pulse" />
+              <div className="h-11 bg-canvas rounded-2xl animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!ingredient && pantry.length > 0) {
+    return (
+      <div className="pb-[110px] bg-bg min-h-full">
+        <SubHeader
+          onBack={() => navigate(-1 as never)}
+          title="Editar ingrediente"
+        />
+        <div className="px-[18px] py-10 text-center text-muted text-sm">
+          Ingrediente não encontrado.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-[110px] bg-bg min-h-full">
       <SubHeader
         onBack={() => navigate(-1 as never)}
-        title="Adicionar ingrediente"
-        sub="O que acabamos de guardar?"
+        title="Editar ingrediente"
+        sub={name || "Atualize as informações"}
       />
 
       {/* Live preview */}
       <div className="px-[18px] pb-[22px]">
         <Card
           className="p-5 flex items-center gap-4"
-          style={{ background: FOOD_GLYPHS[CAT_ICON[cat]].color + '12' }}
+          style={{ background: FOOD_GLYPHS[CAT_ICON[cat]].color + "12" }}
         >
           <div className="w-[72px] h-[72px] rounded-[20px] bg-card flex items-center justify-center flex-shrink-0">
             <FoodIcon name={CAT_ICON[cat]} size={44} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-lg font-extrabold text-ink tracking-[-0.3px] truncate">
-              {name || 'Sem nome'}
+              {name || "Sem nome"}
             </div>
             <div className="text-[13px] text-muted mt-0.5">
-              {qty || '—'} {unit} · {cat}
+              {qty || "—"} {unit} · {cat}
             </div>
             <div className="mt-1.5">
-              <Label color={expiry <= 3 ? 'red' : expiry <= 7 ? 'yellow' : 'green'}>
+              <Label
+                color={expiry <= 3 ? "red" : expiry <= 7 ? "yellow" : "green"}
+              >
                 {expiry}d de validade
               </Label>
             </div>
@@ -101,9 +158,8 @@ export function AddIngredientPage() {
         <FieldGroup label="O que é?">
           <Input
             value={name}
-            onChange={(e) => handleNameChange(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             placeholder="ex: Tomate cereja"
-            autoFocus
           />
         </FieldGroup>
 
@@ -153,25 +209,32 @@ export function AddIngredientPage() {
         </FieldGroup>
         )}
 
-        <FieldGroup label="Categoria" sub="Adivinhamos pelo nome">
+        <FieldGroup label="Categoria">
           <div className="flex gap-2">
             {ICON_GROUPS.map(({ label, cat: groupCat }) => {
               const icon = CAT_ICON[groupCat];
-              const c    = FOOD_GLYPHS[icon].color;
-              const sel  = cat === groupCat;
+              const c = FOOD_GLYPHS[icon].color;
+              const sel = cat === groupCat;
               return (
                 <button
                   key={label}
                   onClick={() => setCat(groupCat)}
                   className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all flex-1"
                   style={{
-                    background: sel ? c + '18' : 'var(--c-card, #f5f3ff)',
-                    border:     sel ? `1.5px solid ${c}` : '1.5px solid transparent',
-                    boxShadow:  sel ? `0 0 0 3px ${c}22` : undefined,
+                    background: sel ? c + "18" : "var(--c-card, #f5f3ff)",
+                    border: sel
+                      ? `1.5px solid ${c}`
+                      : "1.5px solid transparent",
+                    boxShadow: sel ? `0 0 0 3px ${c}22` : undefined,
                   }}
                 >
                   <FoodIcon name={icon} size={28} />
-                  <span className="text-[10px] font-semibold leading-none text-center" style={{ color: sel ? c : undefined }}>{label}</span>
+                  <span
+                    className="text-[10px] font-semibold leading-none text-center"
+                    style={{ color: sel ? c : undefined }}
+                  >
+                    {label}
+                  </span>
                 </button>
               );
             })}
@@ -180,7 +243,7 @@ export function AddIngredientPage() {
 
         <FieldGroup
           label="Validade"
-          sub={`Avisamos quando ${name || 'isso'} estiver perto de vencer`}
+          sub={`Avisamos quando ${name || "isso"} estiver perto de vencer`}
         >
           <div className="flex flex-wrap gap-1.5">
             {SHELF_LIFE.map((d) => (
@@ -200,15 +263,15 @@ export function AddIngredientPage() {
               type="button"
               onClick={() => setHasMonthly((v) => !v)}
               className={[
-                'w-11 h-6 rounded-full transition-colors flex-shrink-0',
-                hasMonthly ? 'bg-accent' : 'bg-subtle',
-              ].join(' ')}
+                "w-11 h-6 rounded-full transition-colors flex-shrink-0",
+                hasMonthly ? "bg-accent" : "bg-subtle",
+              ].join(" ")}
             >
               <span
                 className={[
-                  'block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5',
-                  hasMonthly ? 'translate-x-5' : 'translate-x-0',
-                ].join(' ')}
+                  "block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5",
+                  hasMonthly ? "translate-x-5" : "translate-x-0",
+                ].join(" ")}
               />
             </button>
             {hasMonthly && (
@@ -228,16 +291,18 @@ export function AddIngredientPage() {
           </div>
         </FieldGroup>
 
-        <div className="flex items-center gap-2 mt-1.5">
-          <Button onClick={() => navigate(-1 as never)} disabled={isPending}>Cancelar</Button>
+        <div className="flex gap-2 mt-1.5">
+          <Button onClick={() => navigate(-1 as never)} disabled={isPending}>
+            Cancelar
+          </Button>
           <Button
             variant="primary"
-            className="flex-1"
             onClick={handleSave}
             icon={<IcCheck size={14} />}
             disabled={!name || (!alwaysAvailable && !qty) || isPending}
+            className="flex-1"
           >
-            {isPending ? 'Salvando…' : 'Adicionar à despensa'}
+            {isPending ? "Salvando…" : "Salvar alterações"}
           </Button>
         </div>
       </div>

@@ -1,36 +1,69 @@
 // src/components/molecules/RecipeCard.tsx — square card for home grid
-import { useState } from 'react';
 import { Card, FoodIcon, Rating } from '@/components/atoms';
-import { FOOD_GLYPHS, IcClock, IcHeart } from '@/icons';
+import { FOOD_GLYPHS, IcAlert, IcClock, IcHeart } from '@/icons';
 import type { Recipe } from '@/types';
 
 export interface RecipeCardProps {
-  recipe: Recipe;
-  onClick?: () => void;
+  recipe:      Recipe;
+  onClick?:    () => void;
+  onFavorite?: () => void;
 }
 
-export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
-  const [liked, setLiked] = useState(false);
-  const accent = FOOD_GLYPHS[recipe.sprites[0]].color;
+export function RecipeCard({ recipe, onClick, onFavorite }: RecipeCardProps) {
+  const accent      = FOOD_GLYPHS[recipe.sprites[0]].color;
+  const favorited   = recipe.favorite ?? false;
+  const cookability = recipe.cookability ?? 'ok';
+  const unavailable = cookability === 'unavailable';
+  const low         = cookability === 'low';
+
   return (
     <Card onClick={onClick} className="p-3.5 relative">
+      {/* Favorite */}
       <button
-        onClick={(e) => { e.stopPropagation(); setLiked((v) => !v); }}
+        onClick={(e) => { e.stopPropagation(); onFavorite?.(); }}
         className={[
           'absolute top-3 right-3 z-[2] w-[30px] h-[30px] rounded-full',
-          'inline-flex items-center justify-center bg-canvas',
-          liked ? 'text-accent' : 'text-subtle',
+          'inline-flex items-center justify-center bg-canvas transition-colors',
+          favorited ? 'text-accent' : 'text-subtle',
         ].join(' ')}
+        aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
       >
-        <IcHeart size={15} filled={liked} />
+        <IcHeart size={15} filled={favorited} />
       </button>
+
+      {/* Image area */}
       <div
-        className="w-full aspect-[1.2/1] rounded-2xl flex items-center justify-center mb-3"
+        className={[
+          'w-full aspect-[1.2/1] rounded-2xl flex items-center justify-center mb-3 relative overflow-hidden',
+          unavailable ? 'opacity-50' : '',
+        ].join(' ')}
         style={{ background: accent + '18' }}
       >
         <FoodIcon name={recipe.sprites[0]} size={56} />
+
+        {/* Cookability badge inside image */}
+        {(unavailable || low) && (
+          <div
+            className={[
+              'absolute bottom-1.5 left-1.5 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold',
+              unavailable
+                ? 'bg-red-500 text-white'
+                : 'bg-amber-400 text-amber-900',
+            ].join(' ')}
+          >
+            <IcAlert size={9} />
+            {unavailable ? 'Falta ingrediente' : 'Estoque baixo'}
+          </div>
+        )}
       </div>
-      <div className="text-sm font-extrabold text-ink tracking-[-0.2px] truncate mb-1.5">
+
+      {/* Text */}
+      <div
+        className={[
+          'text-sm font-extrabold tracking-[-0.2px] truncate mb-1.5',
+          unavailable ? 'text-muted' : 'text-ink',
+        ].join(' ')}
+      >
         {recipe.name}
       </div>
       <div className="flex items-center gap-2.5 text-xs text-muted">

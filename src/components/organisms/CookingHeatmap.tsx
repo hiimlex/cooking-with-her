@@ -2,24 +2,22 @@ import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { IcChevRight } from '@/icons';
 
 const MONTH_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+  'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
 ];
 
-const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const DAY_LABELS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
 
 function heatColor(v: number): string {
-  if (v <= 0)   return '#ede9fe';
-  if (v < 0.35) return '#c4b5fd';
-  if (v < 0.6)  return '#a78bfa';
-  if (v < 0.85) return '#7c3aed';
-  return '#5b21b6';
+  if (v <= 0) return 'var(--c-canvas)';
+  const pct = Math.round((0.15 + v * 0.85) * 100);
+  return `color-mix(in srgb, var(--c-accent) ${pct}%, var(--c-canvas))`;
 }
 
 function formatDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
   const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+  return date.toLocaleDateString('pt-BR', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 const CELL = 13;
@@ -221,7 +219,7 @@ export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: Coo
             </div>
           ) : (
             <div className="text-[12px] font-semibold text-white">
-              {popover.count} cook{popover.count > 1 ? 's' : ''}
+              {popover.count} {popover.count === 1 ? 'cozinhada' : 'cozinhadas'}
             </div>
           )}
         </div>
@@ -232,7 +230,7 @@ export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: Coo
 
 export const HeatLegend = () => (
   <div className="flex items-center justify-end gap-1.5 mt-3 text-[11px] text-muted">
-    <span>Less</span>
+    <span>Menos</span>
     {[0, 0.35, 0.6, 0.85, 1].map((v) => (
       <div
         key={v}
@@ -240,6 +238,6 @@ export const HeatLegend = () => (
         style={{ width: 11, height: 11, background: heatColor(v) }}
       />
     ))}
-    <span>More</span>
+    <span>Mais</span>
   </div>
 );

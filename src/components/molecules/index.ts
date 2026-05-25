@@ -8,6 +8,7 @@ export * from './Macro';
 export * from './MacroRing';
 export * from './MenuRow';
 export * from './RecipeCard';
+export * from './IngredientPicker';
 export * from './RecipeRow';
 export * from './ScreenHeader';
 export * from './Section';

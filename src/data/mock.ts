@@ -334,9 +334,8 @@ export const AI_TAGS: AITag[] = [
   { id: 'date',      label: 'Jantar a dois',      group: 'mood' },
   { id: 'comfort',   label: 'Comida de conforto', group: 'mood' },
   { id: 'healthy',   label: 'Leve e saudável',    group: 'mood' },
-  { id: 'spicy',     label: 'Apimentado',         group: 'flavor' },
-  { id: 'usepantry', label: 'Usar o que tem',      group: 'mode' },
-  { id: 'creative',  label: 'Me surpreenda',       group: 'mode' },
+  { id: 'spicy',     label: 'Apimentado',    group: 'flavor' },
+  { id: 'usepantry', label: 'Usar o que tem', group: 'mode' },
 ];
 
 export const STATS: Stats = {

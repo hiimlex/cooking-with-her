@@ -3,375 +3,402 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('🌱 Populando banco de dados...');
 
-  // ─── Couple ────────────────────────────────────────────────────────────────
+  // ─── Casal ─────────────────────────────────────────────────────────────────
   const couple = await prisma.couple.upsert({
-    where: { code: 'mochi' },
+    where:  { code: 'chico' },
     update: {},
-    create: {
-      code: 'mochi',
-      startedDate: new Date('2024-03-14'),
-      weekGoal: 5,
-    },
+    create: { code: 'chico', startedDate: new Date('2024-03-14'), weekGoal: 5 },
   });
 
-  // ─── Users ─────────────────────────────────────────────────────────────────
   const alex = await prisma.user.upsert({
-    where: { personId: 'alex' },
-    update: {},
-    create: {
-      personId: 'alex',
-      name: 'Alex',
-      color: '#7c3aed',
-      coupleId: couple.id,
-    },
+    where:  { personId: 'alex' },
+    update: { coupleId: couple.id },
+    create: { personId: 'alex', name: 'Alex', color: '#7c3aed', coupleId: couple.id },
   });
 
   const yuka = await prisma.user.upsert({
-    where: { personId: 'yuka' },
-    update: {},
-    create: {
-      personId: 'yuka',
-      name: 'Yuka',
-      color: '#db2777',
-      coupleId: couple.id,
-    },
+    where:  { personId: 'yuka' },
+    update: { coupleId: couple.id },
+    create: { personId: 'yuka', name: 'Yuka', color: '#db2777', coupleId: couple.id },
   });
 
-  console.log('✓ Couple & users');
+  console.log('✓ Casal e usuários');
 
-  // ─── Ingredients ───────────────────────────────────────────────────────────
-  const ingredientData = [
-    { id: 'tomato',      name: 'Tomato',         qty: 6,   unit: 'pcs',  cat: 'Produce', sprite: 'Tomato',  expiry: 4  },
-    { id: 'onion',       name: 'Onion',           qty: 3,   unit: 'pcs',  cat: 'Produce', sprite: 'Onion',   expiry: 14 },
-    { id: 'garlic',      name: 'Garlic',          qty: 1,   unit: 'head', cat: 'Produce', sprite: 'Garlic',  expiry: 21 },
-    { id: 'carrot',      name: 'Carrots',         qty: 4,   unit: 'pcs',  cat: 'Produce', sprite: 'Carrot',  expiry: 10 },
-    { id: 'bellpepper',  name: 'Bell Pepper',     qty: 2,   unit: 'pcs',  cat: 'Produce', sprite: 'Pepper',  expiry: 5  },
-    { id: 'lemon',       name: 'Lemon',           qty: 2,   unit: 'pcs',  cat: 'Produce', sprite: 'Lemon',   expiry: 7  },
-    { id: 'salmon',      name: 'Salmon fillet',   qty: 300, unit: 'g',    cat: 'Protein', sprite: 'Fish',    expiry: 1  },
-    { id: 'chicken',     name: 'Chicken breast',  qty: 500, unit: 'g',    cat: 'Protein', sprite: 'Chicken', expiry: 2  },
-    { id: 'eggs',        name: 'Eggs',            qty: 6,   unit: 'pcs',  cat: 'Protein', sprite: 'Egg',     expiry: 14 },
-    { id: 'milk',        name: 'Whole milk',      qty: 1,   unit: 'L',    cat: 'Dairy',   sprite: 'Milk',    expiry: 6  },
-    { id: 'parmesan',    name: 'Parmesan',        qty: 100, unit: 'g',    cat: 'Dairy',   sprite: 'Cheese',  expiry: 30 },
-    { id: 'pasta',       name: 'Pasta',           qty: 400, unit: 'g',    cat: 'Pantry',  sprite: 'Pasta',   expiry: 365},
-    { id: 'rice',        name: 'Rice',            qty: 500, unit: 'g',    cat: 'Pantry',  sprite: 'Rice',    expiry: 365},
-    { id: 'freshbasil',  name: 'Fresh Basil',     qty: 1,   unit: 'pack', cat: 'Spice',   sprite: 'Herb',    expiry: 3  },
-    { id: 'oliveoil',    name: 'Olive oil',       qty: 500, unit: 'ml',   cat: 'Pantry',  sprite: 'Bread',   expiry: 365},
-  ];
+  // ─── Limpeza ───────────────────────────────────────────────────────────────
+  await prisma.memory.deleteMany();
+  await prisma.historyEntry.deleteMany();
+  await prisma.shoppingEntry.deleteMany();
+  await prisma.recipeIngredient.deleteMany();
+  await prisma.recipeSprite.deleteMany();
+  await prisma.recipeStep.deleteMany();
+  await prisma.nutrition.deleteMany();
+  await prisma.recipe.deleteMany();
+  await prisma.ingredient.deleteMany();
 
-  for (const ing of ingredientData) {
-    await prisma.ingredient.upsert({
-      where: { id: ing.id },
-      update: ing,
-      create: ing,
-    });
-  }
+  console.log('✓ Banco limpo');
 
-  console.log('✓ Ingredients');
+  // ─── Ingredientes ──────────────────────────────────────────────────────────
+  const ings = await prisma.ingredient.createMany({
+    data: [
+      // Mercearia
+      { id: 'acucar',        name: 'Açúcar',          qty: 1,   unit: 'kg',      cat: 'Pantry',  expiry: 365, monthlyBuy: 1   },
+      { id: 'ovos',          name: 'Ovos',             qty: 12,  unit: 'unidades',cat: 'Protein', expiry: 14,  monthlyBuy: 30  },
+      { id: 'macarrao',      name: 'Macarrão',         qty: 500, unit: 'g',       cat: 'Pantry',  expiry: 365, monthlyBuy: 1000},
+      { id: 'creme-leite',   name: 'Creme de leite',   qty: 6,   unit: 'caixas',  cat: 'Dairy',   expiry: 60,  monthlyBuy: 6   },
+      { id: 'molho-tomate',  name: 'Molho de tomate',  qty: 3,   unit: 'caixas',  cat: 'Pantry',  expiry: 180, monthlyBuy: 3   },
+      { id: 'sardinha',      name: 'Sardinha',          qty: 2,   unit: 'latas',   cat: 'Protein', expiry: 730, monthlyBuy: 2   },
+      { id: 'arroz',         name: 'Arroz',             qty: 5,   unit: 'kg',      cat: 'Pantry',  expiry: 365, monthlyBuy: 5   },
+      { id: 'feijao',        name: 'Feijão',            qty: 2,   unit: 'kg',      cat: 'Pantry',  expiry: 365, monthlyBuy: 2   },
+      { id: 'pao-forma',     name: 'Pão de forma',      qty: 1,   unit: 'pacote',  cat: 'Pantry',  expiry: 7,   monthlyBuy: 2   },
+      { id: 'doce-leite',    name: 'Doce de leite',     qty: 1,   unit: 'pote',    cat: 'Pantry',  expiry: 180, monthlyBuy: 1   },
+      { id: 'cuscuz',        name: 'Cuscuz',            qty: 3,   unit: 'pacotes', cat: 'Pantry',  expiry: 180, monthlyBuy: 3   },
+      { id: 'pipoca',        name: 'Pipoca',            qty: 1,   unit: 'pacote',  cat: 'Pantry',  expiry: 365, monthlyBuy: 1   },
+      { id: 'oleo',          name: 'Óleo',              qty: 900, unit: 'ml',      cat: 'Pantry',  expiry: 365, monthlyBuy: 900 },
+      { id: 'azeite',        name: 'Azeite',            qty: 500, unit: 'ml',      cat: 'Pantry',  expiry: 365, monthlyBuy: 500 },
+      { id: 'suco',          name: 'Suco',              qty: 1,   unit: 'pacote',  cat: 'Pantry',  expiry: 30,  monthlyBuy: 4   },
+      { id: 'farinha',       name: 'Farinha de trigo',  qty: 1,   unit: 'kg',      cat: 'Pantry',  expiry: 365, monthlyBuy: 1   },
+      { id: 'leite',         name: 'Leite',             qty: 1,   unit: 'L',       cat: 'Dairy',   expiry: 7,   monthlyBuy: 4   },
+      { id: 'bolacha',       name: 'Bolacha',           qty: 1,   unit: 'pacote',  cat: 'Pantry',  expiry: 180                  },
+      { id: 'queijo',        name: 'Queijo',            qty: 200, unit: 'g',       cat: 'Dairy',   expiry: 21,  monthlyBuy: 400 },
+      { id: 'mortadela',     name: 'Mortadela',         qty: 200, unit: 'g',       cat: 'Protein', expiry: 7,   monthlyBuy: 200 },
+      { id: 'requeijao',     name: 'Requeijão',         qty: 1,   unit: 'pote',    cat: 'Dairy',   expiry: 30,  monthlyBuy: 1   },
+      { id: 'cha',           name: 'Chá',               qty: 1,   unit: 'caixa',   cat: 'Pantry',  expiry: 365                  },
+      { id: 'manteiga',      name: 'Manteiga',          qty: 1,   unit: 'caixa',   cat: 'Dairy',   expiry: 30,  monthlyBuy: 1   },
+      { id: 'sal',           name: 'Sal',               qty: 1,   unit: 'kg',      cat: 'Spice',   expiry: 3650                 },
+      { id: 'po-royal',      name: 'Pó Royal',          qty: 1,   unit: 'caixa',   cat: 'Pantry',  expiry: 365                  },
+      // Temperos
+      { id: 'pimenta',       name: 'Pimenta do reino',  qty: 1,   unit: 'pacote',  cat: 'Spice',   expiry: 365                  },
+      { id: 'paprica',       name: 'Páprica',           qty: 1,   unit: 'pacote',  cat: 'Spice',   expiry: 365                  },
+      { id: 'lemon-pepper',  name: 'Lemon pepper',      qty: 1,   unit: 'pacote',  cat: 'Spice',   expiry: 365                  },
+      // Carnes
+      { id: 'frango',        name: 'Frango',            qty: 1,   unit: 'kg',      cat: 'Protein', expiry: 3,   monthlyBuy: 2   },
+      { id: 'calabresa',     name: 'Calabresa',         qty: 500, unit: 'g',       cat: 'Protein', expiry: 7,   monthlyBuy: 500 },
+      { id: 'bacon',         name: 'Bacon',             qty: 200, unit: 'g',       cat: 'Protein', expiry: 7,   monthlyBuy: 200 },
+      { id: 'carne-moida',   name: 'Carne moída',       qty: 500, unit: 'g',       cat: 'Protein', expiry: 2,   monthlyBuy: 500 },
+      { id: 'linguica',      name: 'Linguiça',          qty: 400, unit: 'g',       cat: 'Protein', expiry: 5,   monthlyBuy: 400 },
+      { id: 'peixe',         name: 'Peixe',             qty: 400, unit: 'g',       cat: 'Protein', expiry: 2,   monthlyBuy: 400 },
+      // Legumes, verduras e frutas
+      { id: 'alho',          name: 'Alho',              qty: 2,   unit: 'cabeças', cat: 'Produce', expiry: 21,  monthlyBuy: 2   },
+      { id: 'alface',        name: 'Alface',            qty: 1,   unit: 'pé',      cat: 'Produce', expiry: 5                    },
+      { id: 'cebola',        name: 'Cebola',            qty: 4,   unit: 'unidades',cat: 'Produce', expiry: 21,  monthlyBuy: 6   },
+      { id: 'cebola-roxa',   name: 'Cebola roxa',       qty: 2,   unit: 'unidades',cat: 'Produce', expiry: 21                   },
+      { id: 'repolho',       name: 'Repolho',           qty: 1,   unit: 'unidade', cat: 'Produce', expiry: 14                   },
+      { id: 'brocolis',      name: 'Brócolis',          qty: 1,   unit: 'pé',      cat: 'Produce', expiry: 5                    },
+      { id: 'cenoura',       name: 'Cenoura',           qty: 5,   unit: 'unidades',cat: 'Produce', expiry: 14                   },
+      { id: 'tomate',        name: 'Tomate',            qty: 6,   unit: 'unidades',cat: 'Produce', expiry: 7                    },
+      { id: 'batata',        name: 'Batata',            qty: 1,   unit: 'kg',      cat: 'Produce', expiry: 21                   },
+      { id: 'uva',           name: 'Uva',               qty: 500, unit: 'g',       cat: 'Produce', expiry: 7                    },
+      { id: 'maca',          name: 'Maçã',              qty: 4,   unit: 'unidades',cat: 'Produce', expiry: 14                   },
+      { id: 'batata-doce',   name: 'Batata doce',       qty: 1,   unit: 'kg',      cat: 'Produce', expiry: 14                   },
+      { id: 'macaxeira',     name: 'Macaxeira',         qty: 1,   unit: 'kg',      cat: 'Produce', expiry: 7                    },
+      { id: 'cheiro-verde',  name: 'Cheiro verde',      qty: 1,   unit: 'maço',    cat: 'Produce', expiry: 5                    },
+      { id: 'beterraba',     name: 'Beterraba',         qty: 3,   unit: 'unidades',cat: 'Produce', expiry: 14                   },
+      { id: 'limao',         name: 'Limão',             qty: 6,   unit: 'unidades',cat: 'Produce', expiry: 14                   },
+    ],
+  });
 
-  // ─── Utensils ──────────────────────────────────────────────────────────────
-  const utensilData = [
-    { id: 'nonstickpan',   name: 'Non-stick pan',    have: true,  emoji: '🍳' },
-    { id: 'mediumpot',     name: 'Medium pot',        have: true,  emoji: '🥘' },
-    { id: 'oven',          name: 'Oven',              have: true,  emoji: '♨️' },
-    { id: 'bakingsheet',   name: 'Baking sheet',      have: true,  emoji: '🍪' },
-    { id: 'chefknife',     name: 'Chef knife',        have: true,  emoji: '🔪' },
-    { id: 'cuttingboard',  name: 'Cutting board',     have: true,  emoji: '🟫' },
-    { id: 'blender',       name: 'Blender',           have: true,  emoji: '🫙' },
-    { id: 'whisk',         name: 'Whisk',             have: true,  emoji: '🥄' },
-    { id: 'wok',           name: 'Wok',               have: true,  emoji: '🥡' },
-    { id: 'kitchenscale',  name: 'Kitchen scale',     have: false, emoji: '⚖️' },
-    { id: 'meatthermo',    name: 'Meat thermometer',  have: false, emoji: '🌡️' },
-    { id: 'mandoline',     name: 'Mandoline slicer',  have: false, emoji: '🔪' },
-  ];
+  console.log(`✓ ${ings.count} ingredientes`);
 
-  for (const ut of utensilData) {
-    await prisma.utensil.upsert({
-      where: { id: ut.id },
-      update: ut,
-      create: ut,
-    });
-  }
+  // ─── Utensílios ────────────────────────────────────────────────────────────
+  await prisma.utensil.deleteMany();
+  await prisma.utensil.createMany({
+    data: [
+      { id: 'frigideira',   name: 'Frigideira',         have: true,  emoji: '🍳' },
+      { id: 'panela',       name: 'Panela média',        have: true,  emoji: '🥘' },
+      { id: 'pressao',      name: 'Panela de pressão',   have: true,  emoji: '♨️' },
+      { id: 'forno',        name: 'Forno',               have: true,  emoji: '🔥' },
+      { id: 'assadeira',    name: 'Assadeira',           have: true,  emoji: '🍪' },
+      { id: 'faca',         name: 'Faca de chef',        have: true,  emoji: '🔪' },
+      { id: 'tabua',        name: 'Tábua de corte',      have: true,  emoji: '🟫' },
+      { id: 'liquidificador', name: 'Liquidificador',    have: true,  emoji: '🫙' },
+      { id: 'ralador',      name: 'Ralador',             have: true,  emoji: '🥄' },
+      { id: 'cuscuzeira',   name: 'Cuscuzeira',          have: true,  emoji: '🧺' },
+      { id: 'escorredor',   name: 'Escorredor de massa', have: true,  emoji: '🍜' },
+      { id: 'balanca',      name: 'Balança de cozinha',  have: false, emoji: '⚖️' },
+    ],
+  });
 
-  console.log('✓ Utensils');
+  console.log('✓ Utensílios');
 
-  // ─── Recipes ───────────────────────────────────────────────────────────────
-  const shakshuka = await prisma.recipe.upsert({
-    where: { id: 'shakshuka' },
-    update: {},
-    create: {
-      id: 'shakshuka',
-      name: 'Sunday Shakshuka',
-      tag: 'Brunch',
-      time: 25,
-      difficulty: 'Easy',
-      cookedCount: 12,
-      rating: 5.0,
-      bg: '#fde8e8',
-      accent: '#e63946',
-      servings: 2,
-      why: 'A one-pan wonder with eggs poached in rich tomato sauce. Perfect lazy Sunday vibes.',
+  // ─── Receitas ──────────────────────────────────────────────────────────────
+  const r1 = await prisma.recipe.create({
+    data: {
+      id: 'arroz-brocolis-frango',
+      name: 'Arroz com Brócolis e Frango',
+      tag: 'Weekday', time: 35, difficulty: 'Easy',
+      cookedCount: 0, rating: 0,
+      bg: '#D4EDDA', accent: '#28A745', servings: 2,
+      why: 'Refeição completa e nutritiva num só prato. Frango grelhado com brócolis levemente refogado sobre arroz soltinho.',
       byId: alex.id,
-      sprites: { create: [{ sprite: 'Tomato' }, { sprite: 'Egg' }] },
-      nutrition: {
-        create: { kcal: 380, protein: 18, carbs: 22, fat: 24, fiber: 5 },
-      },
-      steps: {
-        create: [
-          { order: 1, title: 'Chop the vegetables',  desc: 'Dice onion, mince garlic, chop bell pepper into small cubes.', mins: 5 },
-          { order: 2, title: 'Sauté the base',        desc: 'Heat olive oil in a wide pan over medium heat. Cook onion and pepper until soft, about 5 min. Add garlic and cook 1 min more.', mins: 6 },
-          { order: 3, title: 'Add tomatoes',          desc: 'Pour in crushed tomatoes, season with cumin, paprika, salt and pepper. Simmer for 10 min until sauce thickens.', mins: 10 },
-          { order: 4, title: 'Crack in the eggs',     desc: 'Make 4 wells in the sauce. Crack an egg into each. Cover and cook until whites are set but yolks still runny — about 5 min.', mins: 5 },
-          { order: 5, title: 'Serve',                 desc: 'Top with fresh basil and a pinch of chili flakes. Serve straight from the pan with crusty bread.', mins: 1 },
-        ],
-      },
+      sprites:   { create: [{ sprite: 'Rice' }, { sprite: 'Chicken' }, { sprite: 'Herb' }] },
+      nutrition: { create: { kcal: 480, protein: 38, carbs: 52, fat: 10, fiber: 5 } },
+      steps: { create: [
+        { order: 1, title: 'Cozinhar o arroz',     desc: 'Refogue 2 dentes de alho amassados no óleo. Adicione o arroz e frite 2 minutos. Coloque 4 xícaras de água quente e sal. Tampe e cozinhe em fogo baixo por 18 minutos.', mins: 20 },
+        { order: 2, title: 'Temperar o frango',    desc: 'Corte o frango em cubos médios. Tempere com sal, pimenta do reino e lemon pepper.', mins: 5 },
+        { order: 3, title: 'Selar o frango',       desc: 'Numa frigideira quente com fio de óleo, sele o frango em fogo alto até dourar dos dois lados. Reserve.', mins: 8 },
+        { order: 4, title: 'Refogar o brócolis',   desc: 'Na mesma frigideira, doure a cebola picada. Adicione o brócolis em floretes pequenos e refogue 3 minutos. Junte o frango, misture bem.', mins: 5 },
+        { order: 5, title: 'Montar e servir',      desc: 'Sirva o arroz com o frango e brócolis por cima. Finalize com um fio de azeite e suco de limão.', mins: 2 },
+      ]},
     },
   });
 
-  const salmon = await prisma.recipe.upsert({
-    where: { id: 'salmon' },
-    update: {},
-    create: {
-      id: 'salmon',
-      name: 'Lemon Butter Salmon',
-      tag: 'Dinner',
-      time: 20,
-      difficulty: 'Easy',
-      cookedCount: 9,
-      rating: 5.0,
-      bg: '#e8f0fe',
-      accent: '#1a73e8',
-      servings: 2,
-      why: 'A 20-minute weeknight star. Crispy-skin salmon basted in browned butter, garlic, and lemon. Tastes restaurant-fancy.',
+  const r2 = await prisma.recipe.create({
+    data: {
+      id: 'baiao-de-dois',
+      name: 'Baião de Dois',
+      tag: 'Weekday', time: 45, difficulty: 'Easy',
+      cookedCount: 0, rating: 0,
+      bg: '#FFF3CD', accent: '#E8A000', servings: 4,
+      why: 'Clássico nordestino de arroz com feijão verde, queijo coalho e calabresa. Comida de alma.',
       byId: yuka.id,
-      sprites: { create: [{ sprite: 'Fish' }, { sprite: 'Lemon' }] },
-      nutrition: {
-        create: { kcal: 420, protein: 38, carbs: 4, fat: 28, fiber: 1 },
-      },
-      steps: {
-        create: [
-          { order: 1, title: 'Pat salmon dry',       desc: 'Pat the salmon fillets dry with paper towels. Season both sides with salt and pepper.', mins: 2 },
-          { order: 2, title: 'Sear skin side',       desc: 'Heat oil in a skillet over high heat. Place salmon skin-side down. Press gently with a spatula. Cook 4 min without moving.', mins: 4 },
-          { order: 3, title: 'Flip and baste',       desc: 'Flip the salmon. Add butter, garlic cloves, and lemon slices. Tilt the pan and baste continuously for 2 min.', mins: 2 },
-          { order: 4, title: 'Rest and serve',       desc: 'Transfer to a plate. Squeeze fresh lemon over the top. Serve with steamed vegetables or rice.', mins: 2 },
-        ],
-      },
+      sprites:   { create: [{ sprite: 'Rice' }, { sprite: 'Cheese' }, { sprite: 'Herb' }] },
+      nutrition: { create: { kcal: 420, protein: 18, carbs: 68, fat: 10, fiber: 8 } },
+      steps: { create: [
+        { order: 1, title: 'Cozinhar o feijão',        desc: 'Coloque o feijão na pressão com água e sal. Cozinhe por 15 minutos após pegar pressão. O grão deve ficar cozido mas inteiro. Escorra e reserve o caldo.', mins: 20 },
+        { order: 2, title: 'Refogar a base',            desc: 'Na manteiga, refogue a cebola picada e o alho até dourar. Adicione a calabresa em rodelas e deixe fritar 3 minutos.', mins: 6 },
+        { order: 3, title: 'Juntar arroz e feijão',     desc: 'Adicione o arroz e misture bem no refogado por 2 minutos. Acrescente o feijão cozido e o caldo suficiente para cozinhar o arroz. Acerte o sal.', mins: 3 },
+        { order: 4, title: 'Cozinhar juntos',           desc: 'Tampe e cozinhe em fogo baixo por 18 minutos até o arroz absorver todo o líquido.', mins: 18 },
+        { order: 5, title: 'Finalizar com queijo',      desc: 'Desligue o fogo, misture o queijo em cubinhos e o cheiro verde picado. Tampe e aguarde 2 minutos para o queijo começar a derreter. Sirva.', mins: 3 },
+      ]},
     },
   });
 
-  const carbonara = await prisma.recipe.upsert({
-    where: { id: 'carbonara' },
-    update: {},
-    create: {
-      id: 'carbonara',
-      name: 'Real Carbonara',
-      tag: 'Dinner',
-      time: 30,
-      difficulty: 'Medium',
-      cookedCount: 7,
-      rating: 4.0,
-      bg: '#fef9e8',
-      accent: '#d4a017',
-      servings: 2,
-      why: 'No cream, no shortcuts. Just eggs, Pecorino, guanciale, and black pepper — the way Romans make it.',
+  const r3 = await prisma.recipe.create({
+    data: {
+      id: 'cuscuz-com-ovo',
+      name: 'Cuscuz com Ovo',
+      tag: 'Brunch', time: 15, difficulty: 'Easy',
+      cookedCount: 0, rating: 0,
+      bg: '#FFF8E1', accent: '#FFA000', servings: 2,
+      why: 'O café da manhã nordestino mais rápido e satisfatório. Cuscuz fofinho com ovo frito e manteiga derretendo.',
       byId: alex.id,
-      sprites: { create: [{ sprite: 'Pasta' }, { sprite: 'Egg' }] },
-      nutrition: {
-        create: { kcal: 580, protein: 28, carbs: 65, fat: 22, fiber: 3 },
-      },
-      steps: {
-        create: [
-          { order: 1, title: 'Boil pasta',            desc: 'Bring salted water to a boil. Cook pasta until al dente, reserve 1 cup pasta water before draining.', mins: 10 },
-          { order: 2, title: 'Crisp the guanciale',   desc: 'Cook guanciale (or pancetta) in a dry pan over medium heat until golden and crispy. Remove from heat.', mins: 8 },
-          { order: 3, title: 'Make the sauce',        desc: 'Whisk together egg yolks, grated Pecorino Romano, and a generous amount of black pepper in a bowl.', mins: 3 },
-          { order: 4, title: 'Combine off heat',      desc: 'Add hot pasta to the pan with guanciale (off heat). Add egg mixture, tossing quickly. Add pasta water a splash at a time until creamy.', mins: 4 },
-          { order: 5, title: 'Plate',                 desc: 'Serve immediately with extra Pecorino and black pepper on top.', mins: 1 },
-        ],
-      },
+      sprites:   { create: [{ sprite: 'Egg' }, { sprite: 'Herb' }] },
+      nutrition: { create: { kcal: 320, protein: 14, carbs: 44, fat: 10, fiber: 3 } },
+      steps: { create: [
+        { order: 1, title: 'Preparar o cuscuz',    desc: 'Coloque o cuscuz em um bowl, adicione sal e borrife água aos poucos mexendo com um garfo até ficar úmido e soltinho sem empelotar.', mins: 3 },
+        { order: 2, title: 'Cozinhar no vapor',    desc: 'Coloque o cuscuz na cuscuzeira (ou peneira sobre panela com água fervente). Tampe e cozinhe no vapor por 8 minutos até firmar.', mins: 8 },
+        { order: 3, title: 'Fritar os ovos',       desc: 'Na manteiga em fogo médio, frite os ovos no ponto desejado. Tempere com sal.', mins: 4 },
+        { order: 4, title: 'Servir',               desc: 'Desenforme o cuscuz no prato, coloque uma colherinha de manteiga por cima para derreter. Sirva com os ovos fritos e cheiro verde picado.', mins: 1 },
+      ]},
     },
   });
 
-  const stirfry = await prisma.recipe.upsert({
-    where: { id: 'stirfry' },
-    update: {},
-    create: {
-      id: 'stirfry',
-      name: 'Garlic Chicken Stir-fry',
-      tag: 'Weekday',
-      time: 18,
-      difficulty: 'Easy',
-      cookedCount: 8,
-      rating: 4.0,
-      bg: '#fef0e8',
-      accent: '#ea580c',
-      servings: 2,
-      why: 'High heat, fast cook, bold garlic flavor. Ready in under 20 minutes on a weeknight.',
+  const r4 = await prisma.recipe.create({
+    data: {
+      id: 'macarrao-molho-branco',
+      name: 'Macarrão ao Molho Branco',
+      tag: 'Dinner', time: 25, difficulty: 'Easy',
+      cookedCount: 0, rating: 0,
+      bg: '#F0F4FF', accent: '#5B7FFF', servings: 2,
+      why: 'Molho branco cremoso feito na hora com manteiga, leite e queijo. Rápido e reconfortante.',
       byId: yuka.id,
-      sprites: { create: [{ sprite: 'Chicken' }, { sprite: 'Garlic' }] },
-      nutrition: {
-        create: { kcal: 350, protein: 42, carbs: 18, fat: 12, fiber: 3 },
-      },
-      steps: {
-        create: [
-          { order: 1, title: 'Prep ingredients',     desc: 'Slice chicken into thin strips. Mince garlic. Chop vegetables into bite-sized pieces.', mins: 5 },
-          { order: 2, title: 'Heat the wok',         desc: 'Heat wok over maximum heat until smoking. Add oil and swirl to coat.', mins: 2 },
-          { order: 3, title: 'Cook chicken',         desc: 'Add chicken in a single layer. Let it sear for 2 min without stirring, then stir-fry 3 more min until cooked through.', mins: 5 },
-          { order: 4, title: 'Add garlic and veg',   desc: 'Push chicken to the side. Add garlic and cook 30 seconds. Add vegetables and toss everything together.', mins: 4 },
-          { order: 5, title: 'Sauce and serve',      desc: 'Pour in soy sauce, oyster sauce, and a dash of sesame oil. Toss to coat. Serve over steamed rice.', mins: 2 },
-        ],
-      },
+      sprites:   { create: [{ sprite: 'Pasta' }, { sprite: 'Milk' }, { sprite: 'Cheese' }] },
+      nutrition: { create: { kcal: 560, protein: 18, carbs: 72, fat: 22, fiber: 3 } },
+      steps: { create: [
+        { order: 1, title: 'Cozinhar o macarrão',  desc: 'Ferva bastante água com sal. Cozinhe o macarrão al dente conforme o pacote. Escorra e reserve.', mins: 10 },
+        { order: 2, title: 'Fazer o roux',          desc: 'Em panela média, derreta a manteiga e doure o alho picado. Adicione a farinha de trigo e mexa bem por 2 minutos até formar uma pasta lisa e levemente dourada.', mins: 4 },
+        { order: 3, title: 'Incorporar o molho',    desc: 'Adicione o leite aos poucos, mexendo sem parar com um fouet para não empelotar. Quando engrossar, acrescente o creme de leite. Tempere com sal e pimenta do reino.', mins: 5 },
+        { order: 4, title: 'Finalizar',             desc: 'Junte o macarrão ao molho, adicione o queijo ralado e misture bem. Sirva imediatamente com mais queijo por cima.', mins: 3 },
+      ]},
     },
   });
 
-  const tomatosoup = await prisma.recipe.upsert({
-    where: { id: 'tomatosoup' },
-    update: {},
-    create: {
-      id: 'tomatosoup',
-      name: 'Cozy Tomato Soup',
-      tag: 'Lunch',
-      time: 35,
-      difficulty: 'Easy',
-      cookedCount: 5,
-      rating: 5.0,
-      bg: '#fde8e8',
-      accent: '#e63946',
-      servings: 3,
-      why: 'Roasted tomatoes blended silky smooth. The kind of soup that makes you feel looked after.',
+  const r5 = await prisma.recipe.create({
+    data: {
+      id: 'macarrao-bolonhesa',
+      name: 'Macarrão ao Molho Bolonhesa',
+      tag: 'Dinner', time: 40, difficulty: 'Easy',
+      cookedCount: 0, rating: 0,
+      bg: '#FFE4D9', accent: '#E63946', servings: 3,
+      why: 'Carne moída bem refogada com molho de tomate encorpado. O clássico que nunca decepciona.',
       byId: alex.id,
-      sprites: { create: [{ sprite: 'Tomato' }] },
-      nutrition: {
-        create: { kcal: 210, protein: 5, carbs: 28, fat: 9, fiber: 6 },
-      },
-      steps: {
-        create: [
-          { order: 1, title: 'Roast tomatoes',       desc: 'Halve tomatoes and place cut-side up on a baking sheet with garlic cloves and onion. Drizzle with olive oil and roast at 200°C for 25 min.', mins: 25 },
-          { order: 2, title: 'Blend',                desc: 'Transfer everything to a blender with vegetable stock. Blend until completely smooth.', mins: 3 },
-          { order: 3, title: 'Season and serve',     desc: 'Pour into a pot, warm through, and season with salt, pepper, and a pinch of sugar. Serve with a drizzle of cream and crusty bread.', mins: 5 },
-        ],
-      },
+      sprites:   { create: [{ sprite: 'Pasta' }, { sprite: 'Tomato' }, { sprite: 'Onion' }] },
+      nutrition: { create: { kcal: 580, protein: 32, carbs: 68, fat: 18, fiber: 5 } },
+      steps: { create: [
+        { order: 1, title: 'Cozinhar o macarrão', desc: 'Ferva água com bastante sal. Cozinhe o macarrão al dente. Escorra reservando meia xícara da água.', mins: 12 },
+        { order: 2, title: 'Dourar a carne',       desc: 'Em fogo alto, refogue cebola e alho picados no óleo por 3 minutos. Adicione a carne moída e quebre bem com uma colher até dourar e secar toda a água.', mins: 10 },
+        { order: 3, title: 'Montar o molho',       desc: 'Adicione o tomate picado e o molho de tomate. Tempere com sal e pimenta do reino. Tampe e cozinhe em fogo médio por 15 minutos mexendo de vez em quando.', mins: 15 },
+        { order: 4, title: 'Juntar tudo',          desc: 'Misture o macarrão no molho com um pouco da água do cozimento. Finalize com um fio de azeite. Sirva com queijo ralado.', mins: 3 },
+      ]},
     },
   });
 
-  const fishtacos = await prisma.recipe.upsert({
-    where: { id: 'fishtacos' },
-    update: {},
-    create: {
-      id: 'fishtacos',
-      name: 'Crispy Fish Tacos',
-      tag: 'Dinner',
-      time: 25,
-      difficulty: 'Medium',
-      cookedCount: 6,
-      rating: 5.0,
-      bg: '#e8f4fe',
-      accent: '#0284c7',
-      servings: 2,
-      why: 'Beer-battered fish, crunchy slaw, lime crema. Taco Tuesday any day.',
+  const r6 = await prisma.recipe.create({
+    data: {
+      id: 'pf-completo',
+      name: 'PF Completo',
+      tag: 'Weekday', time: 50, difficulty: 'Easy',
+      cookedCount: 0, rating: 0,
+      bg: '#E8F5E9', accent: '#4CAF50', servings: 2,
+      why: 'Arroz, feijão, proteína grelhada e salada. O prato do dia a dia brasileiro, feito com carinho.',
       byId: yuka.id,
-      sprites: { create: [{ sprite: 'Fish' }, { sprite: 'Lemon' }] },
-      nutrition: {
-        create: { kcal: 480, protein: 32, carbs: 45, fat: 18, fiber: 4 },
-      },
-      steps: {
-        create: [
-          { order: 1, title: 'Make the batter',      desc: 'Whisk flour, cornstarch, baking powder, salt, and beer together until smooth. Rest for 5 min.', mins: 6 },
-          { order: 2, title: 'Make the slaw',        desc: 'Toss shredded cabbage with lime juice, salt, and a pinch of sugar. Set aside.', mins: 4 },
-          { order: 3, title: 'Fry the fish',         desc: 'Dip fish strips into batter and fry in hot oil at 180°C for 3-4 min per side until golden and crispy.', mins: 10 },
-          { order: 4, title: 'Assemble',             desc: 'Warm tortillas in a dry pan. Layer fish, slaw, chipotle crema, and fresh cilantro. Serve with lime wedges.', mins: 3 },
-        ],
-      },
+      sprites:   { create: [{ sprite: 'Rice' }, { sprite: 'Chicken' }, { sprite: 'Herb' }] },
+      nutrition: { create: { kcal: 520, protein: 34, carbs: 65, fat: 12, fiber: 9 } },
+      steps: { create: [
+        { order: 1, title: 'Cozinhar o feijão',  desc: 'Cozinhe o feijão na pressão com água por 20 minutos. Em outra panela, refogue alho e cebola no óleo, adicione o feijão cozido, acerte o sal e deixe apurar 5 minutos.', mins: 28 },
+        { order: 2, title: 'Cozinhar o arroz',   desc: 'Frite 2 dentes de alho amassados no óleo, adicione o arroz e refogue 2 minutos. Coloque água quente (proporção 1:2), sal, tampe e cozinhe em fogo baixo por 18 minutos.', mins: 20 },
+        { order: 3, title: 'Grelhar o frango',   desc: 'Tempere o frango com sal, pimenta e alho amassado. Grelhe na frigideira quente até dourar bem dos dois lados, cerca de 6 minutos de cada lado.', mins: 12 },
+        { order: 4, title: 'Salada simples',     desc: 'Rasgue as folhas de alface, corte o tomate em rodelas. Tempere com sal e um fio de azeite.', mins: 3 },
+        { order: 5, title: 'Montar o prato',     desc: 'Monte com arroz e feijão de um lado, frango grelhado ao centro e a saladinha ao lado. Simples e gostoso.', mins: 2 },
+      ]},
     },
   });
 
-  console.log('✓ Recipes');
+  const r7 = await prisma.recipe.create({
+    data: {
+      id: 'strogonoff',
+      name: 'Strogonoff de Frango',
+      tag: 'Dinner', time: 30, difficulty: 'Easy',
+      cookedCount: 0, rating: 0,
+      bg: '#FFF0D9', accent: '#FF8C42', servings: 3,
+      why: 'Frango em cubinhos num molho cremoso de creme de leite e molho de tomate. Serve com arroz e batata palha.',
+      byId: alex.id,
+      sprites:   { create: [{ sprite: 'Chicken' }, { sprite: 'Milk' }, { sprite: 'Rice' }] },
+      nutrition: { create: { kcal: 490, protein: 36, carbs: 30, fat: 24, fiber: 2 } },
+      steps: { create: [
+        { order: 1, title: 'Preparar o frango',   desc: 'Corte o frango em cubinhos ou tirinhas. Tempere com sal, pimenta do reino e alho amassado. Deixe marinar 5 minutos.', mins: 5 },
+        { order: 2, title: 'Dourar o frango',     desc: 'Na manteiga quente, refogue a cebola picada por 2 minutos. Adicione o frango e cozinhe em fogo alto mexendo até dourar por todos os lados.', mins: 8 },
+        { order: 3, title: 'Montar o molho',      desc: 'Adicione o molho de tomate e misture bem. Cozinhe por 5 minutos em fogo médio. Desligue o fogo, acrescente o creme de leite e misture delicadamente.', mins: 7 },
+        { order: 4, title: 'Finalizar e servir',  desc: 'Prove e ajuste o sal. Não ferva após adicionar o creme senão talha. Sirva com arroz branco e batata palha por cima.', mins: 2 },
+      ]},
+    },
+  });
 
-  // ─── Recipe Ingredients (links) ────────────────────────────────────────────
+  const r8 = await prisma.recipe.create({
+    data: {
+      id: 'batata-recheada',
+      name: 'Batata Recheada com Calabresa e Bacon',
+      tag: 'Dinner', time: 65, difficulty: 'Medium',
+      cookedCount: 0, rating: 0,
+      bg: '#FBE9E7', accent: '#D84315', servings: 2,
+      why: 'Batata assada recheada com calabresa, bacon crocante, requeijão e queijo gratinado. Jantar especial.',
+      byId: yuka.id,
+      sprites:   { create: [{ sprite: 'Cheese' }, { sprite: 'Herb' }] },
+      nutrition: { create: { kcal: 620, protein: 24, carbs: 58, fat: 34, fiber: 5 } },
+      steps: { create: [
+        { order: 1, title: 'Assar as batatas',     desc: 'Lave bem as batatas, espete com garfo e embrulhe em papel alumínio. Leve ao forno a 200°C por 45 minutos ou até inserir um garfo e ele entrar sem resistência.', mins: 45 },
+        { order: 2, title: 'Refogar o recheio',    desc: 'Frite o bacon em cubinhos até ficar crocante. Adicione a calabresa em rodelas e a cebola picada. Refogue até tudo dourar bem.', mins: 8 },
+        { order: 3, title: 'Abrir as batatas',     desc: 'Faça um corte em cruz na parte de cima de cada batata. Aperte as laterais com cuidado para abrir. Tempere com sal.', mins: 2 },
+        { order: 4, title: 'Rechear e servir',     desc: 'Coloque uma colher generosa de requeijão, depois o recheio de calabresa e bacon, o queijo ralado por cima e finalize com cheiro verde picado. Sirva imediatamente.', mins: 3 },
+      ]},
+    },
+  });
+
+  const r9 = await prisma.recipe.create({
+    data: {
+      id: 'macarrao-alho-oleo',
+      name: 'Macarrão Alho e Óleo',
+      tag: 'Weekday', time: 20, difficulty: 'Easy',
+      cookedCount: 0, rating: 0,
+      bg: '#FFFFF0', accent: '#B8860B', servings: 2,
+      why: 'O macarrão mais simples e mais gostoso. Alho dourado no azeite e a água do cozimento fazem toda a diferença.',
+      byId: alex.id,
+      sprites:   { create: [{ sprite: 'Pasta' }, { sprite: 'Garlic' }] },
+      nutrition: { create: { kcal: 480, protein: 14, carbs: 72, fat: 16, fiber: 3 } },
+      steps: { create: [
+        { order: 1, title: 'Cozinhar o macarrão',  desc: 'Ferva bastante água com sal generoso. Cozinhe o macarrão al dente. Antes de escorrer, guarde 1 xícara da água do cozimento.', mins: 12 },
+        { order: 2, title: 'Dourar o alho',        desc: 'No azeite em fogo médio-baixo, doure o alho fatiado bem devagar até ficar douradinho e levemente crocante. Cuidado para não queimar!', mins: 5 },
+        { order: 3, title: 'Emulsionar o molho',   desc: 'Adicione o macarrão escorrido ao azeite com alho. Jogue 2 colheres da água do cozimento e mexa vigorosamente para criar um molhinho cremoso e sedoso.', mins: 2 },
+        { order: 4, title: 'Finalizar',            desc: 'Ajuste sal e pimenta do reino a gosto. Sirva com queijo ralado por cima. Simples assim.', mins: 1 },
+      ]},
+    },
+  });
+
+  console.log('✓ 9 receitas');
+
+  // ─── Ingredientes das receitas ─────────────────────────────────────────────
   const recipeIngredients = [
-    { recipeId: shakshuka.id,  ingredientId: 'tomato',     qty: 6,   unit: 'pcs'  },
-    { recipeId: shakshuka.id,  ingredientId: 'eggs',       qty: 4,   unit: 'pcs'  },
-    { recipeId: shakshuka.id,  ingredientId: 'onion',      qty: 1,   unit: 'pcs'  },
-    { recipeId: shakshuka.id,  ingredientId: 'garlic',     qty: 3,   unit: 'cloves'},
-    { recipeId: shakshuka.id,  ingredientId: 'bellpepper', qty: 1,   unit: 'pcs'  },
-    { recipeId: salmon.id,     ingredientId: 'salmon',     qty: 300, unit: 'g'    },
-    { recipeId: salmon.id,     ingredientId: 'lemon',      qty: 1,   unit: 'pcs'  },
-    { recipeId: salmon.id,     ingredientId: 'garlic',     qty: 2,   unit: 'cloves'},
-    { recipeId: carbonara.id,  ingredientId: 'pasta',      qty: 200, unit: 'g'    },
-    { recipeId: carbonara.id,  ingredientId: 'eggs',       qty: 3,   unit: 'pcs'  },
-    { recipeId: carbonara.id,  ingredientId: 'parmesan',   qty: 60,  unit: 'g'    },
-    { recipeId: stirfry.id,    ingredientId: 'chicken',    qty: 400, unit: 'g'    },
-    { recipeId: stirfry.id,    ingredientId: 'garlic',     qty: 4,   unit: 'cloves'},
-    { recipeId: stirfry.id,    ingredientId: 'bellpepper', qty: 1,   unit: 'pcs'  },
-    { recipeId: tomatosoup.id, ingredientId: 'tomato',     qty: 8,   unit: 'pcs'  },
-    { recipeId: tomatosoup.id, ingredientId: 'onion',      qty: 1,   unit: 'pcs'  },
-    { recipeId: tomatosoup.id, ingredientId: 'garlic',     qty: 3,   unit: 'cloves'},
-    { recipeId: fishtacos.id,  ingredientId: 'salmon',     qty: 300, unit: 'g'    },
-    { recipeId: fishtacos.id,  ingredientId: 'lemon',      qty: 2,   unit: 'pcs'  },
+    // Arroz com Brócolis e Frango
+    { recipeId: r1.id, ingredientId: 'arroz',        qty: 2,   unit: 'xícaras'       },
+    { recipeId: r1.id, ingredientId: 'frango',        qty: 400, unit: 'g'             },
+    { recipeId: r1.id, ingredientId: 'brocolis',      qty: 1,   unit: 'pé'            },
+    { recipeId: r1.id, ingredientId: 'alho',          qty: 4,   unit: 'dentes'        },
+    { recipeId: r1.id, ingredientId: 'cebola',        qty: 1,   unit: 'unidade'       },
+    { recipeId: r1.id, ingredientId: 'oleo',          qty: 2,   unit: 'colheres'      },
+    { recipeId: r1.id, ingredientId: 'sal',           qty: 1,   unit: 'a gosto'       },
+    { recipeId: r1.id, ingredientId: 'pimenta',       qty: 1,   unit: 'a gosto'       },
+    // Baião de Dois
+    { recipeId: r2.id, ingredientId: 'arroz',         qty: 2,   unit: 'xícaras'       },
+    { recipeId: r2.id, ingredientId: 'feijao',        qty: 2,   unit: 'xícaras'       },
+    { recipeId: r2.id, ingredientId: 'queijo',        qty: 150, unit: 'g'             },
+    { recipeId: r2.id, ingredientId: 'calabresa',     qty: 200, unit: 'g'             },
+    { recipeId: r2.id, ingredientId: 'cebola',        qty: 1,   unit: 'unidade'       },
+    { recipeId: r2.id, ingredientId: 'alho',          qty: 3,   unit: 'dentes'        },
+    { recipeId: r2.id, ingredientId: 'manteiga',      qty: 1,   unit: 'colher'        },
+    { recipeId: r2.id, ingredientId: 'cheiro-verde',  qty: 1,   unit: 'a gosto'       },
+    { recipeId: r2.id, ingredientId: 'sal',           qty: 1,   unit: 'a gosto'       },
+    // Cuscuz com Ovo
+    { recipeId: r3.id, ingredientId: 'cuscuz',        qty: 2,   unit: 'xícaras'       },
+    { recipeId: r3.id, ingredientId: 'ovos',          qty: 2,   unit: 'unidades'      },
+    { recipeId: r3.id, ingredientId: 'manteiga',      qty: 1,   unit: 'colher'        },
+    { recipeId: r3.id, ingredientId: 'sal',           qty: 1,   unit: 'a gosto'       },
+    { recipeId: r3.id, ingredientId: 'cheiro-verde',  qty: 1,   unit: 'a gosto'       },
+    // Macarrão ao Molho Branco
+    { recipeId: r4.id, ingredientId: 'macarrao',      qty: 300, unit: 'g'             },
+    { recipeId: r4.id, ingredientId: 'creme-leite',   qty: 1,   unit: 'caixa'         },
+    { recipeId: r4.id, ingredientId: 'leite',         qty: 200, unit: 'ml'            },
+    { recipeId: r4.id, ingredientId: 'manteiga',      qty: 2,   unit: 'colheres'      },
+    { recipeId: r4.id, ingredientId: 'farinha',       qty: 2,   unit: 'colheres'      },
+    { recipeId: r4.id, ingredientId: 'queijo',        qty: 100, unit: 'g'             },
+    { recipeId: r4.id, ingredientId: 'alho',          qty: 2,   unit: 'dentes'        },
+    { recipeId: r4.id, ingredientId: 'sal',           qty: 1,   unit: 'a gosto'       },
+    { recipeId: r4.id, ingredientId: 'pimenta',       qty: 1,   unit: 'a gosto'       },
+    // Macarrão Bolonhesa
+    { recipeId: r5.id, ingredientId: 'macarrao',      qty: 400, unit: 'g'             },
+    { recipeId: r5.id, ingredientId: 'carne-moida',   qty: 400, unit: 'g'             },
+    { recipeId: r5.id, ingredientId: 'molho-tomate',  qty: 1,   unit: 'caixa'         },
+    { recipeId: r5.id, ingredientId: 'tomate',        qty: 2,   unit: 'unidades'      },
+    { recipeId: r5.id, ingredientId: 'cebola',        qty: 1,   unit: 'unidade'       },
+    { recipeId: r5.id, ingredientId: 'alho',          qty: 3,   unit: 'dentes'        },
+    { recipeId: r5.id, ingredientId: 'oleo',          qty: 2,   unit: 'colheres'      },
+    { recipeId: r5.id, ingredientId: 'sal',           qty: 1,   unit: 'a gosto'       },
+    { recipeId: r5.id, ingredientId: 'pimenta',       qty: 1,   unit: 'a gosto'       },
+    // PF Completo
+    { recipeId: r6.id, ingredientId: 'arroz',         qty: 2,   unit: 'xícaras'       },
+    { recipeId: r6.id, ingredientId: 'feijao',        qty: 2,   unit: 'xícaras'       },
+    { recipeId: r6.id, ingredientId: 'frango',        qty: 400, unit: 'g'             },
+    { recipeId: r6.id, ingredientId: 'alface',        qty: 4,   unit: 'folhas'        },
+    { recipeId: r6.id, ingredientId: 'tomate',        qty: 1,   unit: 'unidade'       },
+    { recipeId: r6.id, ingredientId: 'alho',          qty: 4,   unit: 'dentes'        },
+    { recipeId: r6.id, ingredientId: 'cebola',        qty: 1,   unit: 'unidade'       },
+    { recipeId: r6.id, ingredientId: 'oleo',          qty: 2,   unit: 'colheres'      },
+    { recipeId: r6.id, ingredientId: 'sal',           qty: 1,   unit: 'a gosto'       },
+    // Strogonoff
+    { recipeId: r7.id, ingredientId: 'frango',        qty: 500, unit: 'g'             },
+    { recipeId: r7.id, ingredientId: 'creme-leite',   qty: 1,   unit: 'caixa'         },
+    { recipeId: r7.id, ingredientId: 'molho-tomate',  qty: 1,   unit: 'caixa'         },
+    { recipeId: r7.id, ingredientId: 'cebola',        qty: 1,   unit: 'unidade'       },
+    { recipeId: r7.id, ingredientId: 'alho',          qty: 2,   unit: 'dentes'        },
+    { recipeId: r7.id, ingredientId: 'manteiga',      qty: 1,   unit: 'colher'        },
+    { recipeId: r7.id, ingredientId: 'sal',           qty: 1,   unit: 'a gosto'       },
+    { recipeId: r7.id, ingredientId: 'pimenta',       qty: 1,   unit: 'a gosto'       },
+    { recipeId: r7.id, ingredientId: 'arroz',         qty: 2,   unit: 'xícaras'       },
+    // Batata Recheada
+    { recipeId: r8.id, ingredientId: 'batata',        qty: 2,   unit: 'grandes'       },
+    { recipeId: r8.id, ingredientId: 'calabresa',     qty: 200, unit: 'g'             },
+    { recipeId: r8.id, ingredientId: 'bacon',         qty: 150, unit: 'g'             },
+    { recipeId: r8.id, ingredientId: 'requeijao',     qty: 1,   unit: 'colher grande' },
+    { recipeId: r8.id, ingredientId: 'queijo',        qty: 100, unit: 'g'             },
+    { recipeId: r8.id, ingredientId: 'cebola',        qty: 1,   unit: 'unidade'       },
+    { recipeId: r8.id, ingredientId: 'sal',           qty: 1,   unit: 'a gosto'       },
+    { recipeId: r8.id, ingredientId: 'cheiro-verde',  qty: 1,   unit: 'a gosto'       },
+    // Macarrão Alho e Óleo
+    { recipeId: r9.id, ingredientId: 'macarrao',      qty: 300, unit: 'g'             },
+    { recipeId: r9.id, ingredientId: 'alho',          qty: 6,   unit: 'dentes'        },
+    { recipeId: r9.id, ingredientId: 'azeite',        qty: 4,   unit: 'colheres'      },
+    { recipeId: r9.id, ingredientId: 'queijo',        qty: 50,  unit: 'g'             },
+    { recipeId: r9.id, ingredientId: 'sal',           qty: 1,   unit: 'a gosto'       },
+    { recipeId: r9.id, ingredientId: 'pimenta',       qty: 1,   unit: 'a gosto'       },
   ];
 
-  for (const ri of recipeIngredients) {
-    await prisma.recipeIngredient.create({ data: ri });
-  }
+  await prisma.recipeIngredient.createMany({ data: recipeIngredients });
+  console.log(`✓ ${recipeIngredients.length} ingredientes das receitas`);
 
-  console.log('✓ Recipe ingredients');
-
-  // ─── History ───────────────────────────────────────────────────────────────
-  const now = new Date();
-  const daysAgo = (n: number) => new Date(now.getTime() - n * 86400000);
-
-  const historyData = [
-    { recipeId: stirfry.id,    byId: yuka.id, cookedAt: daysAgo(1),  rating: 5.0, note: 'Best one yet ⭐ extra garlic was the move'  },
-    { recipeId: salmon.id,     byId: alex.id, cookedAt: daysAgo(2),  rating: 4.5, note: null                                        },
-    { recipeId: shakshuka.id,  byId: alex.id, cookedAt: daysAgo(7),  rating: 5.0, note: null                                        },
-    { recipeId: stirfry.id,    byId: yuka.id, cookedAt: daysAgo(12), rating: 4.0, note: null                                        },
-    { recipeId: fishtacos.id,  byId: yuka.id, cookedAt: daysAgo(18), rating: 5.0, note: 'The slaw made it 🐟'                       },
-    { recipeId: tomatosoup.id, byId: alex.id, cookedAt: daysAgo(23), rating: 5.0, note: null                                        },
-    { recipeId: carbonara.id,  byId: alex.id, cookedAt: daysAgo(30), rating: 4.0, note: 'Need to work on the sauce creaminess'      },
-  ];
-
-  for (const h of historyData) {
-    await prisma.historyEntry.create({ data: h });
-  }
-
-  console.log('✓ History');
-
-  // ─── Shopping ──────────────────────────────────────────────────────────────
-  const shoppingData = [
-    { name: 'Avocados',    qty: '3 pcs',    cat: 'Produce', done: false, byId: yuka.id },
-    { name: 'Cilantro',    qty: '1 bunch',  cat: 'Produce', done: false, byId: yuka.id },
-    { name: 'Greek yogurt',qty: '500g',     cat: 'Dairy',   done: false, byId: alex.id },
-    { name: 'Black beans', qty: '2 cans',   cat: 'Pantry',  done: false, byId: alex.id },
-    { name: 'Lime',        qty: '4 pcs',    cat: 'Produce', done: true,  byId: yuka.id },
-  ];
-
-  for (const s of shoppingData) {
-    await prisma.shoppingEntry.create({ data: s });
-  }
-
-  console.log('✓ Shopping list');
-
-  // ─── Memories ──────────────────────────────────────────────────────────────
-  const memoriesData = [
-    { recipeId: carbonara.id,  byId: alex.id, date: daysAgo(4),  bg: '#fef9e8' },
-    { recipeId: salmon.id,     byId: yuka.id, date: daysAgo(6),  bg: '#e8f0fe' },
-    { recipeId: shakshuka.id,  byId: alex.id, date: daysAgo(7),  bg: '#fde8e8' },
-    { recipeId: stirfry.id,    byId: yuka.id, date: daysAgo(10), bg: '#fef0e8' },
-    { recipeId: fishtacos.id,  byId: yuka.id, date: daysAgo(14), bg: '#e8f4fe' },
-    { recipeId: tomatosoup.id, byId: alex.id, date: daysAgo(13), bg: '#fde8e8' },
-  ];
-
-  for (const m of memoriesData) {
-    await prisma.memory.create({ data: m });
-  }
-
-  console.log('✓ Memories');
-  console.log('\n🎉 Database seeded successfully!');
+  console.log('\n🎉 Banco populado com sucesso!');
 }
 
 main()
-  .catch((e) => {
-    console.error('Seed error:', e);
-    process.exit(1);
-  })
+  .catch((e) => { console.error('Erro no seed:', e); process.exit(1); })
   .finally(() => prisma.$disconnect());

@@ -24,6 +24,20 @@ const server = Fastify({
   },
 });
 
+async function applyMigrations(db: import('@prisma/client').PrismaClient) {
+  const migrations = [
+    `ALTER TABLE Ingredient     ADD COLUMN alwaysAvailable INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE RecipeIngredient ADD COLUMN optional       INTEGER NOT NULL DEFAULT 0`,
+  ];
+  for (const sql of migrations) {
+    try {
+      await db.$executeRawUnsafe(sql);
+    } catch {
+      // column already exists — safe to ignore
+    }
+  }
+}
+
 async function bootstrap() {
   // ─── CORS ─────────────────────────────────────────────────────────────────
   await server.register(cors, {
@@ -38,6 +52,7 @@ async function bootstrap() {
 
   // ─── Plugins ──────────────────────────────────────────────────────────────
   await server.register(prismaPlugin);
+  await applyMigrations(server.prisma);
   await server.register(authPlugin);
 
   // ─── Routes ───────────────────────────────────────────────────────────────

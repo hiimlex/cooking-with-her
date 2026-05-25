@@ -20,17 +20,19 @@ export interface RecipeStepDto {
 }
 
 export interface RecipeIngredientDto {
-  id:   string;
-  qty:  number;
-  unit: string;
+  id:       string;
+  qty:      number;
+  unit:     string;
+  optional: boolean;
   ingredient: {
-    id:     string;
-    name:   string;
-    qty:    number;
-    unit:   string;
-    cat:    string;
-    sprite: string;
-    expiry: number;
+    id:              string;
+    name:            string;
+    qty:             number;
+    unit:            string;
+    cat:             string;
+    sprite:          string;
+    expiry:          number;
+    alwaysAvailable: boolean;
   };
 }
 
@@ -54,6 +56,7 @@ export interface RecipeDto {
   servings?:   number;
   why?:        string;
   isAI:        boolean;
+  favorite:    boolean;
   by:          RecipeUserDto;
   sprites:     RecipeSpriteDto[];
   nutrition?:  NutritionDto;

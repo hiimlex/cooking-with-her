@@ -18,13 +18,14 @@ export interface Couple {
 export type IngredientCat = 'Produce' | 'Protein' | 'Dairy' | 'Pantry' | 'Spice' | 'Other';
 
 export interface Ingredient {
-  id:         string;
-  name:       string;
-  qty:        number;
-  unit:       string;
-  cat:        IngredientCat;
-  expiry:     number;
-  monthlyBuy?: number;
+  id:               string;
+  name:             string;
+  qty:              number;
+  unit:             string;
+  cat:              IngredientCat;
+  expiry:           number;
+  monthlyBuy?:      number;
+  alwaysAvailable?: boolean;
 }
 
 export interface RecipeIngredient {
@@ -50,6 +51,8 @@ export interface Nutrition {
 export type RecipeTag = 'Brunch' | 'Lunch' | 'Dinner' | 'Snack' | 'Weekday' | 'AI';
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 
+export type CookStatus = 'ok' | 'low' | 'unavailable';
+
 export interface Recipe {
   id: string;
   name: string;
@@ -67,6 +70,8 @@ export interface Recipe {
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
   why?: string;
+  favorite?: boolean;
+  cookability?: CookStatus;
 }
 
 export interface Utensil {

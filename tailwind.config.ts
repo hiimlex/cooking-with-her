@@ -9,19 +9,19 @@ export default {
         mono: ['Geist Mono', 'ui-monospace', 'monospace'],
       },
       colors: {
-        bg:     '#faf8ff',
-        canvas: '#f3eefe',
-        card:   '#ffffff',
-        sunken: '#ede8f7',
+        bg:     'var(--c-bg)',
+        canvas: 'var(--c-canvas)',
+        card:   'var(--c-card)',
+        sunken: 'var(--c-sunken)',
 
-        ink:    '#1e1730',
-        muted:  '#6b6580',
-        subtle: '#9a94b0',
+        ink:    'var(--c-ink)',
+        muted:  'var(--c-muted)',
+        subtle: 'var(--c-subtle)',
 
         accent: {
-          DEFAULT: '#7c3aed',
-          em:      '#6d28d9',
-          tint:    '#f3eefe',
+          DEFAULT: 'var(--c-accent)',
+          em:      'var(--c-accent-em)',
+          tint:    'var(--c-accent-tint)',
         },
 
         danger:    '#ef4444',

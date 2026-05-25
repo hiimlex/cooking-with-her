@@ -1,29 +1,40 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Avatar, Card, Chip, FoodIcon, Input, Rating } from '@/components/atoms';
 import { RecipeCard, Section } from '@/components/molecules';
-import { IcChevRight, IcSearch, IcSparkle } from '@/icons';
+import { IcChevRight, IcHeart, IcSearch, IcSparkle } from '@/icons';
 import { FOOD_GLYPHS } from '@/icons';
 import { useHomeData } from '@/hooks/useHomeData';
+import { toggleFavorite } from '@/api/recipes';
 
 const FILTERS = [
-  { id: 'all',    label: 'All' },
-  { id: 'quick',  label: 'Quick' },
-  { id: 'Dinner', label: 'Dinner' },
-  { id: 'Brunch', label: 'Brunch' },
-  { id: 'Lunch',  label: 'Lunch' },
+  { id: 'all',     label: 'Todas'    },
+  { id: 'saved',   label: 'Salvas' },
+  { id: 'quick',   label: 'Rápidas'  },
+  { id: 'Dinner',  label: 'Jantar'   },
+  { id: 'Brunch',  label: 'Brunch'   },
+  { id: 'Lunch',   label: 'Almoço'   },
 ];
 
 export function HomePage() {
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
 
   const { recipes, latestEntry, isLoading } = useHomeData(filter, search);
 
+  const favMutation = useMutation({
+    mutationFn: toggleFavorite,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recipes'] }),
+  });
+
   const entryAccent = latestEntry
     ? FOOD_GLYPHS[latestEntry.recipeSprite]?.color ?? '#888'
     : '#888';
+
+  const sectionTitle = filter === 'saved' ? 'Salvas' : 'Populares';
 
   return (
     <div>
@@ -31,9 +42,9 @@ export function HomePage() {
       <div className="pt-[54px] px-[18px] pb-4">
         <div className="flex items-center justify-between mb-1.5">
           <div className="min-w-0">
-            <div className="text-[13px] text-muted">Hi Alex & Yuka</div>
+            <div className="text-[13px] text-muted">Oi, Alex & Yuka</div>
             <h1 className="m-0 mt-0.5 text-[26px] font-extrabold text-ink tracking-[-0.6px]">
-              Easy to cook menu
+              O que cozinhamos hoje?
             </h1>
           </div>
           <div className="flex">
@@ -52,7 +63,7 @@ export function HomePage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search your perfect recipe"
+            placeholder="Buscar receita perfeita"
             className="pl-[42px]"
           />
         </div>
@@ -72,16 +83,21 @@ export function HomePage() {
           </div>
           <div className="flex-1">
             <div className="text-xs font-semibold opacity-85">Ask Nonna</div>
-            <div className="text-[17px] font-extrabold tracking-[-0.3px]">What should we cook?</div>
+            <div className="text-[17px] font-extrabold tracking-[-0.3px]">O que cozinhamos hoje?</div>
           </div>
           <IcChevRight size={18} />
         </button>
       </div>
 
       {/* Yesterday's cook */}
-      {latestEntry && (
+      {isLoading && !latestEntry ? (
         <div className="px-[18px] pb-[18px]">
-          <Section title="Yesterday's cook" padded={false} />
+          <div className="h-4 w-24 bg-canvas rounded-lg animate-pulse mb-3" />
+          <div className="h-[76px] bg-canvas rounded-3xl animate-pulse" />
+        </div>
+      ) : latestEntry && (
+        <div className="px-[18px] pb-[18px]">
+          <Section title="Última vez" padded={false} />
           <div className="mt-3">
             <Card onClick={() => navigate(`/recipe/${latestEntry.recipeId}`)} className="p-3.5 flex items-center gap-3.5">
               <div
@@ -111,24 +127,48 @@ export function HomePage() {
 
       {/* Category */}
       <div className="px-[18px] pb-3">
-        <Section title="Category" padded={false} />
+        <Section title="Categoria" padded={false} />
       </div>
       <div className="flex gap-2 px-[18px] pb-[18px] overflow-x-auto no-scrollbar">
         {FILTERS.map((f) => (
-          <Chip key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</Chip>
+          <Chip key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)}>
+            {f.label}
+          </Chip>
         ))}
       </div>
 
-      {/* Popular */}
+      {/* Recipe grid */}
       <div className="px-[18px] pb-1">
-        <Section title="Popular" count={recipes.length} padded={false} />
+        <Section title={sectionTitle} count={recipes.length} padded={false} />
       </div>
+
       {isLoading ? (
-        <div className="px-[18px] pt-3 text-muted text-sm">Loading...</div>
+        <div className="px-[18px] pt-3 grid grid-cols-2 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-3xl overflow-hidden bg-canvas animate-pulse">
+              <div className="w-full aspect-[1.2/1]" />
+              <div className="p-3.5 flex flex-col gap-2">
+                <div className="h-3.5 rounded-lg bg-card w-4/5" />
+                <div className="h-3 rounded-lg bg-card w-2/5" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : recipes.length === 0 && filter === 'saved' ? (
+        <div className="px-[18px] pt-6 flex flex-col items-center gap-2 text-center">
+          <IcHeart size={28} className="text-subtle" />
+          <div className="text-sm font-semibold text-ink">Nenhuma receita salva ainda</div>
+          <div className="text-xs text-muted">Toque no coração em qualquer receita para salvar aqui.</div>
+        </div>
       ) : (
         <div className="px-[18px] pt-3 grid grid-cols-2 gap-3">
           {recipes.map((r) => (
-            <RecipeCard key={r.id} recipe={r} onClick={() => navigate(`/recipe/${r.id}`)} />
+            <RecipeCard
+              key={r.id}
+              recipe={r}
+              onClick={() => navigate(`/recipe/${r.id}`)}
+              onFavorite={() => favMutation.mutate(r.id)}
+            />
           ))}
         </div>
       )}
