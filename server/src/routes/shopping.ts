@@ -107,11 +107,10 @@ const shoppingRoutes: FastifyPluginAsync = async (server) => {
 
     for (const { ingredientId, purchasedQty } of items) {
       if (purchasedQty > 0) {
-        await server.prisma.$executeRawUnsafe(
-          `UPDATE Ingredient SET qty = qty + ? WHERE id = ?`,
-          purchasedQty,
-          ingredientId,
-        );
+        await server.prisma.ingredient.update({
+          where: { id: ingredientId },
+          data:  { qty: { increment: purchasedQty } },
+        });
       }
     }
 
