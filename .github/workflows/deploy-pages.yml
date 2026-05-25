@@ -30,7 +30,7 @@ jobs:
           # /<repo-name>/ — GitHub Pages serves under this path.
           # Override with a repo variable (Settings → Variables → Actions)
           # if you use a custom domain and want base = '/'.
-          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || format('/{0}/', github.event.repository.name) }}
+          VITE_BASE_PATH: /${{ vars.VITE_BASE_PATH || github.event.repository.name }}/
           # Full URL of your Vercel API deployment.
           # Set as a repo secret: Settings → Secrets → Actions → VITE_API_URL
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
@@ -45,4 +45,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir:  ./dist
-          cname:        ${{ vars.PAGES_CNAME }}   # optional: your custom domain
