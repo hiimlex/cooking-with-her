@@ -69,6 +69,11 @@ export const ENDPOINTS = {
     uploadPhoto: '/memories/upload-photo',
     delete:      (id: string) => `/memories/${id}`,
   },
+  orders: {
+    list:   '/orders',
+    create: '/orders',
+    delete: (id: string) => `/orders/${id}`,
+  },
 } as const;
 
 // ─── Query params ──────────────────────────────────────────────────────────
@@ -172,4 +177,14 @@ export interface UtensilPatch {
   have?:  boolean;
   name?:  string;
   emoji?: string;
+}
+
+export interface OrderQuery {
+  from?: string;
+  to?:   string;
+}
+
+export interface OrderBody {
+  date:  string;
+  note?: string;
 }

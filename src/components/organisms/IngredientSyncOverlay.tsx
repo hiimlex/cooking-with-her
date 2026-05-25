@@ -32,6 +32,7 @@ export function IngredientSyncOverlay({
   const [finished, setFinished] = useState(false);
   const [error,    setError]    = useState<string | null>(null);
   const ran = useRef(false);
+  const autoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (ran.current) return;
@@ -46,6 +47,10 @@ export function IngredientSyncOverlay({
           }
           if ('total' in event) {
             setTotal(event.total);
+            // No recipes use this ingredient — auto-close without bothering user.
+            if (event.total === 0) {
+              autoCloseTimer.current = setTimeout(() => onDone(), 300);
+            }
           } else if ('done' in event) {
             setFinished(true);
           } else if ('recipeId' in event) {
@@ -74,6 +79,8 @@ export function IngredientSyncOverlay({
         setError(e instanceof Error ? e.message : 'Erro desconhecido');
       }
     })();
+
+    return () => { if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current); };
   }, [ingredientId, oldUnit]);
 
   const doneCount = recipes.filter((r) => r.status === 'done').length;

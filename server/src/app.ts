@@ -15,6 +15,7 @@ import aiRoutes       from './routes/ai';
 import utensilsRoutes from './routes/utensils';
 import memoriesRoutes from './routes/memories';
 import historyRoutes  from './routes/history';
+import ordersRoutes   from './routes/orders';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -56,6 +57,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(utensilsRoutes, { prefix: '/utensils'  });
   await app.register(memoriesRoutes, { prefix: '/memories'  });
   await app.register(historyRoutes,  { prefix: '/history'   });
+  await app.register(ordersRoutes,   { prefix: '/orders'    });
 
   app.get('/health', async () => ({ status: 'ok', ts: new Date().toISOString() }));
 

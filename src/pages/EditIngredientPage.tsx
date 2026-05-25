@@ -79,7 +79,6 @@ export function EditIngredientPage() {
 
   const handleSave = async () => {
     if (!name) return;
-    const unitChanged = unit !== originalUnit.current;
     await mutateAsync({
       name,
       qty: alwaysAvailable ? 0 : Number(qty),
@@ -91,11 +90,7 @@ export function EditIngredientPage() {
         ? { monthlyBuy: Number(monthlyBuy) }
         : { monthlyBuy: undefined }),
     });
-    if (unitChanged) {
-      setShowSync(true);
-    } else {
-      navigate("/pantry");
-    }
+    setShowSync(true);
   };
 
   if (pantryLoading && !ready) {

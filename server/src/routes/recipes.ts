@@ -221,10 +221,20 @@ const recipesRoutes: FastifyPluginAsync = async (server) => {
     });
     if (!recipe) return reply.status(404).send({ error: 'Receita não encontrada' });
 
-    // Descontar ingredientes — pula alwaysAvailable e opcionais
+    // Hortaliças de uso imprevisível — quantidade variável, não descontar do estoque.
+    // Regra: cat=Produce com exceção de batata e cenoura (medidas com precisão).
+    const PRODUCE_EXCEPTIONS = ['batata', 'cenoura'];
+    const isUntracked = (ri: typeof recipe.ingredients[0]) => {
+      if (ri.ingredient.alwaysAvailable) return true;
+      if (ri.ingredient.cat !== 'Produce') return false;
+      const nameLower = ri.ingredient.name.toLowerCase();
+      return !PRODUCE_EXCEPTIONS.some((ex) => nameLower.includes(ex));
+    };
+
+    // Descontar ingredientes — pula alwaysAvailable, opcionais e hortaliças genéricas
     await Promise.all(
       recipe.ingredients
-        .filter((ri) => !ri.ingredient.alwaysAvailable && !ri.optional)
+        .filter((ri) => !isUntracked(ri) && !ri.optional)
         .map(async (ri) => {
           const current = await server.prisma.ingredient.findUnique({
             where: { id: ri.ingredientId }, select: { qty: true },

@@ -28,6 +28,14 @@ function clampQty(qty: number, max: number, unit: string): number {
   return Math.round(raw * prec) / prec;
 }
 
+const PRODUCE_EXCEPTIONS = ['batata', 'cenoura'];
+
+function isUntrackedIngredient(ing: Ingredient | PickedIngredient): boolean {
+  if ('alwaysAvailable' in ing && ing.alwaysAvailable) return true;
+  if (ing.cat !== 'Produce') return false;
+  return !PRODUCE_EXCEPTIONS.some((ex) => ing.name.toLowerCase().includes(ex));
+}
+
 export function IngredientPicker({ value, onChange }: Props) {
   const [search,          setSearch]          = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -63,11 +71,12 @@ export function IngredientPicker({ value, onChange }: Props) {
     : [];
 
   const addIngredient = (ing: Ingredient) => {
-    const stock = ing.qty;
-    const qty   = clampQty(defaultQtyForUnit(ing.unit), stock, ing.unit);
+    const untracked = isUntrackedIngredient(ing);
+    const stock     = untracked ? Infinity : ing.qty;
+    const qty       = untracked ? 1 : clampQty(defaultQtyForUnit(ing.unit), stock, ing.unit);
     onChange([
       ...value,
-      { ingredientId: ing.id, name: ing.name, qty, unit: ing.unit, notInPantry: false },
+      { ingredientId: ing.id, name: ing.name, qty, unit: ing.unit, cat: ing.cat, notInPantry: false },
     ]);
     setSearch('');
     setDebouncedSearch('');
@@ -156,14 +165,15 @@ export function IngredientPicker({ value, onChange }: Props) {
           {value.map((ing) => {
             const key         = ing.ingredientId || ing.name;
             const notInPantry = ing.notInPantry ?? false;
-            const stock       = notInPantry ? Infinity : (pantryStockMap[ing.ingredientId] ?? Infinity);
+            const untracked   = isUntrackedIngredient(ing);
+            const stock       = (notInPantry || untracked) ? Infinity : (pantryStockMap[ing.ingredientId] ?? Infinity);
             const step        = stepForUnit(ing.unit);
             const discrete    = isDiscreteUnit(ing.unit);
             const draftVal    = drafts[key];
             const displayVal  = draftVal !== undefined ? draftVal : formatQtyForUnit(ing.qty, ing.unit);
             const parsedQty   = draftVal !== undefined ? (parseFloat(draftVal) || 0) : ing.qty;
-            const overStock   = !notInPantry && parsedQty > stock;
-            const atMax       = !notInPantry && stock !== Infinity && ing.qty >= stock && draftVal === undefined;
+            const overStock   = !notInPantry && !untracked && parsedQty > stock;
+            const atMax       = !notInPantry && !untracked && stock !== Infinity && ing.qty >= stock && draftVal === undefined;
 
             return (
               <div
@@ -183,23 +193,33 @@ export function IngredientPicker({ value, onChange }: Props) {
                     <span className="text-sm font-semibold text-ink truncate">
                       {ing.name}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => toggleOptional(key)}
-                      title={ing.optional ? 'Tornar obrigatório' : 'Marcar como opcional'}
-                      className={[
-                        'flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full border transition-colors',
-                        ing.optional
-                          ? 'bg-amber-100 border-amber-300 text-amber-700'
-                          : 'bg-transparent border-canvas text-subtle hover:border-muted hover:text-muted',
-                      ].join(' ')}
-                    >
-                      opc
-                    </button>
+                    {untracked ? (
+                      <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 border border-green-300 text-green-700">
+                        livre
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => toggleOptional(key)}
+                        title={ing.optional ? 'Tornar obrigatório' : 'Marcar como opcional'}
+                        className={[
+                          'flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full border transition-colors',
+                          ing.optional
+                            ? 'bg-amber-100 border-amber-300 text-amber-700'
+                            : 'bg-transparent border-canvas text-subtle hover:border-muted hover:text-muted',
+                        ].join(' ')}
+                      >
+                        opc
+                      </button>
+                    )}
                   </div>
                   {notInPantry ? (
                     <span className="text-[10px] font-semibold text-amber-600">
                       Fora do estoque — será criado ao salvar
+                    </span>
+                  ) : untracked ? (
+                    <span className="text-[10px] font-semibold text-green-700">
+                      Não desconta do estoque ao cozinhar
                     </span>
                   ) : stock !== Infinity ? (
                     <span className={[
@@ -213,7 +233,12 @@ export function IngredientPicker({ value, onChange }: Props) {
                   ) : null}
                 </div>
 
-                {/* Unit selector + qty input */}
+                {/* Unit selector + qty input — hidden for untracked (a gosto) */}
+                {untracked ? (
+                  <span className="text-[11px] font-semibold text-green-700 flex-shrink-0 px-2">
+                    a gosto
+                  </span>
+                ) : (
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <select
                     value={ing.unit}
@@ -247,6 +272,7 @@ export function IngredientPicker({ value, onChange }: Props) {
                     ].join(' ')}
                   />
                 </div>
+                )}
 
                 {/* Remove */}
                 <button

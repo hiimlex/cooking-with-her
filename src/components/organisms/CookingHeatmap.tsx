@@ -6,12 +6,14 @@ const MONTH_SHORT = [
   'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
 ];
 
-const DAY_LABELS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+const DAY_LABELS = ['S', 'T', 'Q', 'Q', 'S'];
 
-function heatColor(v: number): string {
-  if (v <= 0) return 'var(--c-canvas)';
-  const pct = Math.round((0.15 + v * 0.85) * 100);
-  return `color-mix(in srgb, var(--c-accent) ${pct}%, var(--c-canvas))`;
+const ORDER_COLOR = '#f59e0b';
+
+function cellBg(count: number, isOrder: boolean): string {
+  if (count > 0)  return 'var(--c-accent)';
+  if (isOrder)    return ORDER_COLOR;
+  return 'var(--c-canvas)';
 }
 
 function formatDate(iso: string): string {
@@ -20,9 +22,10 @@ function formatDate(iso: string): string {
   return date.toLocaleDateString('pt-BR', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-const CELL = 10;
-const GAP  = 2;
-const DAY_LABEL_W = 12;
+const GAP         = 2;
+const DAY_LABEL_W = 16;
+const MIN_CELL    = 8;
+const MAX_CELL    = 14;
 
 export interface HeatmapRecipe {
   id:   string;
@@ -32,6 +35,7 @@ export interface HeatmapRecipe {
 export interface CookingHeatmapProps {
   weeks?:         number;
   data?:          Record<string, number>;
+  orders?:        Record<string, boolean>;
   recipes?:       Record<string, HeatmapRecipe[]>;
   onRecipePress?: (id: string) => void;
 }
@@ -50,9 +54,11 @@ interface Popover {
   recipes: HeatmapRecipe[];
 }
 
-export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: CookingHeatmapProps) {
-  const [popover, setPopover] = useState<Popover | null>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
+export function CookingHeatmap({ weeks = 12, data, orders, recipes, onRecipePress }: CookingHeatmapProps) {
+  const [popover,  setPopover]  = useState<Popover | null>(null);
+  const [cellSize, setCellSize] = useState(12);
+  const popoverRef   = useRef<HTMLDivElement>(null);
+  const gridRef      = useRef<HTMLDivElement>(null);
 
   const { columns, monthMarkers, maxCount } = useMemo(() => {
     const today = new Date();
@@ -71,7 +77,7 @@ export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: Coo
 
     for (let w = 0; w < weeks; w++) {
       const col: Cell[] = [];
-      for (let d = 0; d < 7; d++) {
+      for (let d = 0; d < 5; d++) {
         const cell = new Date(start);
         cell.setDate(start.getDate() + w * 7 + d);
         const key = cell.toISOString().split('T')[0];
@@ -91,7 +97,7 @@ export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: Coo
 
   const handleCellClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>, cell: Cell) => {
-      if (cell.future || cell.count === 0) return;
+      if (cell.future || (cell.count === 0 && !orders?.[cell.date])) return;
       e.stopPropagation();
       const rect = e.currentTarget.getBoundingClientRect();
       setPopover({
@@ -102,8 +108,20 @@ export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: Coo
         recipes: recipes?.[cell.date] ?? [],
       });
     },
-    [recipes],
+    [recipes, orders],
   );
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      const size = Math.min(MAX_CELL, Math.max(MIN_CELL, Math.floor((w - (weeks - 1) * GAP) / weeks)));
+      setCellSize(size);
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [weeks]);
 
   useEffect(() => {
     if (!popover) return;
@@ -112,17 +130,35 @@ export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: Coo
     return () => document.removeEventListener('click', close);
   }, [popover]);
 
+  useEffect(() => {
+    if (!popover || !popoverRef.current) return;
+    const el  = popoverRef.current;
+    const rect = el.getBoundingClientRect();
+    const MARGIN = 8;
+
+    if (rect.right > window.innerWidth - MARGIN) {
+      el.style.left = (popover.x - (rect.right - (window.innerWidth - MARGIN))) + 'px';
+    } else if (rect.left < MARGIN) {
+      el.style.left = (popover.x + (MARGIN - rect.left)) + 'px';
+    }
+
+    if (rect.top < MARGIN) {
+      el.style.top       = (popover.y + 14) + 'px';
+      el.style.transform = 'translate(-50%, 0)';
+    }
+  }, [popover]);
+
   return (
     <div className="select-none">
       {/* Month labels */}
-      <div className="flex mb-[5px]" style={{ paddingLeft: DAY_LABEL_W + GAP }}>
+      <div className="flex mb-[5px]" style={{ paddingLeft: DAY_LABEL_W + GAP, gap: GAP }}>
         {columns.map((_, w) => {
           const m = monthMarkers.find((mk) => mk.col === w);
           return (
             <div
               key={w}
-              className="text-[9px] font-semibold text-muted leading-none truncate"
-              style={{ flex: 1, minWidth: CELL }}
+              className="text-[11px] font-semibold text-muted leading-none overflow-visible whitespace-nowrap flex-shrink-0"
+              style={{ width: cellSize }}
             >
               {m?.label ?? ''}
             </div>
@@ -137,8 +173,8 @@ export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: Coo
           {DAY_LABELS.map((label, i) => (
             <div
               key={i}
-              className="text-[9px] font-semibold text-muted text-right leading-none flex items-center justify-end"
-              style={{ height: CELL }}
+              className="text-[11px] font-semibold text-muted text-right leading-none flex items-center justify-end"
+              style={{ height: cellSize }}
             >
               {label}
             </div>
@@ -146,20 +182,20 @@ export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: Coo
         </div>
 
         {/* Heat cells */}
-        <div className="flex flex-1 overflow-x-auto no-scrollbar" style={{ gap: GAP }}>
+        <div ref={gridRef} className="flex flex-1" style={{ gap: GAP }}>
           {columns.map((col, w) => (
-            <div key={w} className="flex flex-col flex-1" style={{ gap: GAP, minWidth: CELL }}>
+            <div key={w} className="flex flex-col flex-shrink-0" style={{ gap: GAP, width: cellSize }}>
               {col.map((cell) => (
                 <div
                   key={cell.date}
                   className={[
                     'rounded-[3px] flex-shrink-0',
-                    !cell.future && cell.count > 0 ? 'cursor-pointer' : 'cursor-default',
+                    !cell.future && (cell.count > 0 || orders?.[cell.date]) ? 'cursor-pointer' : 'cursor-default',
                   ].join(' ')}
                   style={{
-                    width:      '100%',
-                    height:     CELL,
-                    background: cell.future ? 'transparent' : heatColor(cell.count / maxCount),
+                    width:      cellSize,
+                    height:     cellSize,
+                    background: cell.future ? 'transparent' : cellBg(cell.count, orders?.[cell.date] ?? false),
                   }}
                   onClick={(e) => handleCellClick(e, cell)}
                 />
@@ -192,7 +228,11 @@ export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: Coo
             {formatDate(popover.date)}
           </div>
 
-          {popover.recipes.length > 0 ? (
+          {popover.count === 0 && orders?.[popover.date] ? (
+            <div className="text-[12px] font-semibold" style={{ color: ORDER_COLOR }}>
+              Pedimos fora
+            </div>
+          ) : popover.recipes.length > 0 ? (
             <div className="flex flex-col gap-1">
               {popover.recipes.map((r) => (
                 <button
@@ -229,15 +269,12 @@ export function CookingHeatmap({ weeks = 12, data, recipes, onRecipePress }: Coo
 }
 
 export const HeatLegend = () => (
-  <div className="flex items-center justify-end gap-1.5 mt-3 text-[11px] text-muted">
-    <span>Menos</span>
-    {[0, 0.35, 0.6, 0.85, 1].map((v) => (
-      <div
-        key={v}
-        className="rounded-[3px]"
-        style={{ width: 11, height: 11, background: heatColor(v) }}
-      />
-    ))}
-    <span>Mais</span>
+  <div className="flex items-center justify-end gap-2 mt-3 text-[11px] text-muted flex-wrap">
+    <div className="rounded-[3px]" style={{ width: 13, height: 13, background: 'var(--c-canvas)' }} />
+    <span>Nada</span>
+    <div className="rounded-[3px] ml-1" style={{ width: 13, height: 13, background: ORDER_COLOR }} />
+    <span>Pediu fora</span>
+    <div className="rounded-[3px] ml-1" style={{ width: 13, height: 13, background: 'var(--c-accent)' }} />
+    <span>Cozinhou</span>
   </div>
 );

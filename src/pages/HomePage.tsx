@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Avatar, Card, Chip, FoodIcon, Input, Rating } from '@/components/atoms';
+import { Avatar, Button, Card, Chip, FoodIcon, Input, Rating } from '@/components/atoms';
 import { RecipeCard, Section } from '@/components/molecules';
-import { IcChevRight, IcHeart, IcSearch, IcSparkle } from '@/icons';
+import { IcChevRight, IcHeart, IcSearch, IcSparkle, IcX } from '@/icons';
 import { FOOD_GLYPHS } from '@/icons';
 import { useHomeData } from '@/hooks/useHomeData';
+import { useOrders } from '@/hooks/useOrders';
 import { toggleFavorite } from '@/api/recipes';
 
 const FILTERS = [
@@ -22,6 +23,18 @@ export function HomePage() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [orderNote, setOrderNote] = useState('');
+
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const { orders: todayOrders, addMutation: addOrder, deleteMutation: deleteOrder } = useOrders({ from: today, to: today });
+  const todayOrder = todayOrders[0] ?? null;
+
+  const handleSaveOrder = async () => {
+    await addOrder.mutateAsync({ date: today, note: orderNote.trim() || undefined });
+    setShowOrderForm(false);
+    setOrderNote('');
+  };
 
   const { recipes: allRecipes, latestEntry, memoryPhotoMap, isLoading } = useHomeData(filter, search);
 
@@ -90,6 +103,63 @@ export function HomePage() {
           </div>
           <IcChevRight size={18} />
         </button>
+      </div>
+
+      {/* Pedi fora hoje */}
+      <div className="px-[18px] pb-[18px]">
+        {todayOrder ? (
+          <div className="flex items-center gap-3 rounded-[20px] px-[18px] py-3.5 border" style={{ background: '#fffbeb', borderColor: '#fcd34d' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#fef3c7' }}>
+              <span className="text-base font-bold" style={{ color: '#d97706' }}>!</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-bold" style={{ color: '#92400e' }}>Pedimos fora hoje</div>
+              {todayOrder.note && (
+                <div className="text-xs truncate" style={{ color: '#b45309' }}>{todayOrder.note}</div>
+              )}
+            </div>
+            <button
+              onClick={() => deleteOrder.mutate(todayOrder.id)}
+              className="text-subtle hover:text-danger transition-colors flex-shrink-0"
+            >
+              <IcX size={14} />
+            </button>
+          </div>
+        ) : showOrderForm ? (
+          <div className="rounded-[20px] px-[18px] py-4 flex flex-col gap-3 bg-canvas">
+            <div className="text-sm font-bold text-ink">Pedi fora hoje</div>
+            <Input
+              value={orderNote}
+              onChange={(e) => setOrderNote(e.target.value)}
+              placeholder="O que pediu? (opcional)"
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveOrder()}
+            />
+            <div className="flex gap-2">
+              <Button onClick={() => { setShowOrderForm(false); setOrderNote(''); }}>
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSaveOrder}
+                disabled={addOrder.isPending}
+                className="flex-1"
+              >
+                {addOrder.isPending ? 'Salvando…' : 'Registrar'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowOrderForm(true)}
+            className="w-full text-left rounded-[20px] px-[18px] py-3.5 flex items-center gap-3 bg-canvas"
+          >
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-subtle/30">
+              <span className="text-sm font-extrabold text-muted">?</span>
+            </div>
+            <span className="flex-1 text-sm font-semibold text-muted">Pediu fora hoje?</span>
+            <IcChevRight size={16} className="text-subtle" />
+          </button>
+        )}
       </div>
 
       {/* Yesterday's cook */}

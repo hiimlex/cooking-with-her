@@ -63,7 +63,7 @@ export function ShoppingPage() {
 
   const queuedNames = new Set(open.map((i) => i.name.toLowerCase()));
   const outOfStock = pantryItems.filter(
-    (i) => i.qty === 0 && !i.alwaysAvailable && !queuedNames.has(i.name.toLowerCase()),
+    (i) => i.qty === 0 && i.alwaysAvailable !== true && !queuedNames.has(i.name.toLowerCase()),
   );
 
   const outOfStockNames = new Set(outOfStock.map((i) => i.name.toLowerCase()));
@@ -72,16 +72,16 @@ export function ShoppingPage() {
     outOfStockNames.has(name.toLowerCase());
 
   const nearExpiry = pantryItems.filter(
-    (i) => i.qty > 0 && i.expiry > 0 && i.expiry <= 3 && !alreadyListed(i.name),
+    (i) => i.qty > 0 && i.alwaysAvailable !== true && i.expiry > 0 && i.expiry <= 3 && !alreadyListed(i.name),
   );
 
   const nearExpiryNames = new Set(nearExpiry.map((i) => i.name.toLowerCase()));
   const lowStock = pantryItems.filter((i) => {
-    if (i.qty === 0) return false;
+    if (i.qty === 0 || i.alwaysAvailable === true) return false;
     if (alreadyListed(i.name) || nearExpiryNames.has(i.name.toLowerCase()))
       return false;
     if (i.monthlyBuy) return i.qty < i.monthlyBuy * 0.25;
-    return i.qty <= 1;
+    return false;
   });
 
   const handleAdd = async () => {

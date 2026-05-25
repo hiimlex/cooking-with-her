@@ -12,6 +12,17 @@ function normalizeForMatch(text: string): string {
     .replace(/[̀-ͯ]/g, '');
 }
 
+function conversionFactor(fromUnit: string, toUnit: string): number | null {
+  if (fromUnit === toUnit) return null;
+  const table: Record<string, Record<string, number>> = {
+    g:  { kg: 0.001 },
+    kg: { g: 1000   },
+    ml: { L: 0.001  },
+    L:  { ml: 1000  },
+  };
+  return table[fromUnit]?.[toUnit] ?? null;
+}
+
 const aiRoutes: FastifyPluginAsync = async (server) => {
   const auth = { preHandler: [server.authenticate] };
 
@@ -258,64 +269,115 @@ const aiRoutes: FastifyPluginAsync = async (server) => {
         return reply;
       }
 
-      // ── Compatible conversion: math cascade already ran → confirm each recipe ──
-      if (MATH_PAIRS[oldUnit] === newUnit) {
-        for (const ri of recipeIngredients) {
+      // ── Per-recipe sync ───────────────────────────────────────────────────────
+      // Check every RecipeIngredient independently against the current pantry
+      // unit (newUnit). This handles both scenarios:
+      //   A) unit changed (g→kg): cascade already converted matching recipes;
+      //      recipes still in a different unit are caught here.
+      //   B) only qty updated (restock): cascade didn't run; any recipe whose
+      //      stored unit differs from the pantry unit gets fixed now.
+      //
+      // noChange semantics:
+      //   - ri.unit === newUnit AND oldUnit === newUnit  → truly unchanged, skip
+      //   - ri.unit === newUnit AND oldUnit !== newUnit  → converted by cascade
+      //   - ri.unit !== newUnit                         → fix inline (math or AI)
+
+      const unitChanged = oldUnit !== newUnit;
+      const aiNeededCtx: RecipeIngredientContext[] = [];
+
+      for (const ri of recipeIngredients) {
+        if (ri.unit === newUnit) {
+          if (!unitChanged) {
+            // Already in the correct unit and no unit change happened — skip.
+            send({
+              recipeId:   ri.recipe.id,
+              recipeName: ri.recipe.name,
+              qty:        ri.qty,
+              unit:       ri.unit,
+              noChange:   true,
+              reason:     null,
+            });
+          } else {
+            // Unit changed and cascade already handled this recipe.
+            send({
+              recipeId:   ri.recipe.id,
+              recipeName: ri.recipe.name,
+              qty:        ri.qty,
+              unit:       ri.unit,
+              noChange:   false,
+              reason:     `Convertido de ${oldUnit} → ${newUnit}`,
+            });
+          }
+          continue;
+        }
+
+        // ri.unit !== newUnit — needs fixing.
+        const factor = conversionFactor(ri.unit, newUnit);
+        if (factor !== null) {
+          // Direct math conversion (e.g. g↔kg, ml↔L).
+          const converted = Math.round(ri.qty * factor * 1e9) / 1e9;
+          await server.prisma.recipeIngredient.updateMany({
+            where: { ingredientId, recipeId: ri.recipe.id },
+            data:  { qty: converted, unit: newUnit },
+          });
           send({
             recipeId:   ri.recipe.id,
             recipeName: ri.recipe.name,
-            qty:        ri.qty,
-            unit:       ri.unit,
-            noChange:   true,
-            reason:     null,
+            qty:        converted,
+            unit:       newUnit,
+            noChange:   false,
+            reason:     `Convertido de ${ri.unit} → ${newUnit}`,
+          });
+        } else {
+          // Incompatible units — queue for AI.
+          aiNeededCtx.push({
+            recipeId:       ri.recipe.id,
+            recipeName:     ri.recipe.name,
+            servings:       ri.recipe.servings,
+            currentQty:     ri.qty,
+            currentUnit:    ri.unit,
+            allIngredients: ri.recipe.ingredients.map((i) => ({
+              name: i.ingredient.name,
+              qty:  i.qty,
+              unit: i.unit,
+            })),
           });
         }
-        send({ done: true, count: 0 });
-        raw.end();
-        return reply;
       }
 
-      // ── Incompatible conversion: ask AI to handle best-effort ─────────────────
-      const contexts: RecipeIngredientContext[] = recipeIngredients.map((ri) => ({
-        recipeId:       ri.recipe.id,
-        recipeName:     ri.recipe.name,
-        servings:       ri.recipe.servings,
-        currentQty:     ri.qty,
-        currentUnit:    ri.unit,
-        allIngredients: ri.recipe.ingredients.map((i) => ({
-          name: i.ingredient.name,
-          qty:  i.qty,
-          unit: i.unit,
-        })),
-      }));
+      // ── AI batch for incompatible conversions ─────────────────────────────────
+      if (aiNeededCtx.length > 0) {
+        const result = await adjustIngredientInRecipes(
+          apiKey,
+          { name: ingredient.name, oldUnit, newUnit },
+          aiNeededCtx,
+        );
 
-      const result = await adjustIngredientInRecipes(
-        apiKey,
-        { name: ingredient.name, oldUnit, newUnit },
-        contexts,
-      );
+        for (const adj of result.adjustments) {
+          await server.prisma.recipeIngredient.updateMany({
+            where: { ingredientId, recipeId: adj.recipeId },
+            data:  { qty: adj.qty, unit: adj.unit },
+          });
 
-      for (const adj of result.adjustments) {
-        await server.prisma.recipeIngredient.updateMany({
-          where: { ingredientId, recipeId: adj.recipeId },
-          data:  { qty: adj.qty, unit: adj.unit },
-        });
+          const recipeName = recipeIngredients.find(
+            (ri) => ri.recipe.id === adj.recipeId,
+          )?.recipe.name ?? adj.recipeId;
 
-        const recipeName = recipeIngredients.find(
-          (ri) => ri.recipe.id === adj.recipeId,
-        )?.recipe.name ?? adj.recipeId;
-
-        send({
-          recipeId:   adj.recipeId,
-          recipeName,
-          qty:        adj.qty,
-          unit:       adj.unit,
-          noChange:   adj.noChange,
-          reason:     adj.reason ?? null,
-        });
+          send({
+            recipeId:   adj.recipeId,
+            recipeName,
+            qty:        adj.qty,
+            unit:       adj.unit,
+            noChange:   adj.noChange,
+            reason:     adj.reason ?? null,
+          });
+        }
       }
 
-      send({ done: true, count: result.adjustments.filter((a) => !a.noChange).length });
+      const changedCount = recipeIngredients.filter((ri) =>
+        ri.unit !== newUnit || unitChanged,
+      ).length;
+      send({ done: true, count: changedCount });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido';
       send({ error: msg });

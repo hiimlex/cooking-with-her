@@ -1,13 +1,34 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Avatar, Card, FoodIcon, Rating } from "@/components/atoms";
 import { KPI, ScreenHeader, Section } from "@/components/molecules";
 import { CookingHeatmap, HeatLegend } from "@/components/organisms";
 import { useStatsData } from "@/hooks/useStatsData";
+import { getOrders } from "@/api/orders";
 import { FOOD_GLYPHS, IcBook, IcFlame, IcStar, IcTarget } from "@/icons";
 import type { FoodGlyphId } from "@/types";
 
+const HEATMAP_WEEKS = 12;
+
 export function StatsPage() {
   const navigate = useNavigate();
+
+  const ordersFrom = useMemo(() => {
+    const d = new Date(Date.now() - HEATMAP_WEEKS * 7 * 86_400_000);
+    return d.toISOString().split('T')[0];
+  }, []);
+
+  const { data: ordersData = [] } = useQuery({
+    queryKey: ['orders', { from: ordersFrom }],
+    queryFn:  () => getOrders({ from: ordersFrom }),
+    staleTime: 60_000,
+  });
+
+  const ordersMap = useMemo(
+    () => Object.fromEntries(ordersData.map((o) => [o.date, true])) as Record<string, boolean>,
+    [ordersData],
+  );
   const { stats, topRecipes, uniqueRecipesCount, isLoading } = useStatsData();
 
   if (isLoading || !stats) {
@@ -150,7 +171,9 @@ export function StatsPage() {
         />
         <Card className="p-4 mt-3">
           <CookingHeatmap
+            weeks={HEATMAP_WEEKS}
             data={stats.heatmap}
+            orders={ordersMap}
             recipes={stats.heatmapRecipes}
             onRecipePress={(id) => navigate(`/recipe/${id}`)}
           />

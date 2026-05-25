@@ -5,8 +5,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  // directUrl is used by Prisma Migrate to bypass PgBouncer (Vercel Postgres).
-  // Set it to the same value as DATABASE_URL when not using a pooler.
   directUrl = env("DIRECT_URL")
 }
 
@@ -19,7 +17,8 @@ model Couple {
   weekGoal    Int      @default(5)
   createdAt   DateTime @default(now())
 
-  users User[]
+  users        User[]
+  orderEntries OrderEntry[]
 }
 
 model User {
@@ -165,6 +164,18 @@ model HistoryEntry {
 
   byId String
   by   User   @relation(fields: [byId], references: [id])
+}
+
+// ─── Order entries ──────────────────────────────────────────────────────────
+
+model OrderEntry {
+  id        String   @id @default(uuid())
+  date      String   // ISO date "2026-05-25"
+  note      String?
+  createdAt DateTime @default(now())
+
+  coupleId String
+  couple   Couple @relation(fields: [coupleId], references: [id])
 }
 
 // ─── Memories ───────────────────────────────────────────────────────────────

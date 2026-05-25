@@ -533,26 +533,36 @@ export async function adjustIngredientInRecipes(
    - Outros ingredientes da receita: ${others || 'nenhum'}`;
   }).join('\n\n');
 
-  const prompt = `Você é um conversor de unidades culinárias. O ingrediente "${ingredient.name}" teve sua unidade alterada de "${ingredient.oldUnit}" para "${ingredient.newUnit}".
+  const prompt = `Você é um conversor de unidades culinárias especializado em culinária brasileira. O ingrediente "${ingredient.name}" teve sua unidade alterada de "${ingredient.oldUnit}" para "${ingredient.newUnit}".
 
-Esta é uma conversão entre unidades INCOMPATÍVEIS (sem regra matemática direta). Sua tarefa é definir a quantidade mais razoável de "${ingredient.name}" na nova unidade "${ingredient.newUnit}" para cada receita abaixo.
+Esta é uma conversão entre unidades INCOMPATÍVEIS (sem regra matemática direta). Sua tarefa é definir a quantidade CULINARIAMENTE CORRETA de "${ingredient.name}" na nova unidade "${ingredient.newUnit}" para cada receita.
+
+## Referências culinárias brasileiras (use como base de raciocínio)
+- Cuscuz nordestino: receita p/ 2 porções usa ~200 g = 0,2 kg = ~1,5 xícara
+- Farinha de mandioca: ~100 g/porção
+- Arroz cru: ~80-100 g/porção = ~0,5 xícara
+- Feijão cru: ~80-100 g/porção
+- Farinha de trigo: ~100-150 g por receita (bolo/massa)
+- Leite: 200-250 ml/porção
+- Manteiga/azeite: 1-2 col. sopa por receita (10-30 g)
+- Açúcar: 1-2 col. sopa por porção (15-30 g)
 
 ## Receitas afetadas
 ${recipeList}
 
 ## Regras OBRIGATÓRIAS
-1. NUNCA altere a unidade para algo diferente de "${ingredient.newUnit}" — o usuário escolheu essa unidade e ela deve ser respeitada.
-2. Baseie-se na quantidade atual (currentQty em currentUnit) para estimar o equivalente em "${ingredient.newUnit}".
-3. Use o contexto dos outros ingredientes da receita APENAS para confirmar a escala (ex: se tem 300g de frango, a escala é para 2 porções).
-4. Se a conversão dimensional não fizer sentido (ex: litros → kg), aplique assim mesmo e adicione um aviso claro em "reason".
-5. Altere SOMENTE qty e unit de "${ingredient.name}" — nunca outros ingredientes, nunca os passos.
-6. noChange deve ser true APENAS se a quantidade atual já está expressa corretamente em "${ingredient.newUnit}" e não precisa de ajuste.
+1. NUNCA altere a unidade para algo diferente de "${ingredient.newUnit}".
+2. Converta considerando: (a) a quantidade original (currentQty em currentUnit), (b) o número de porções da receita, (c) as quantidades dos outros ingredientes para confirmar a escala.
+3. Se a quantidade original já era razoável para o número de porções, preserve essa escala culinária na nova unidade.
+4. SEMPRE aplique a conversão — noChange só é true se a quantidade atual JÁ está em "${ingredient.newUnit}" com valor culinariamente correto.
+5. Prefira números limpos e práticos: 0.2 kg em vez de 0.19999; 1.5 xícara em vez de 1.47.
+6. Se a conversão dimensional não fizer sentido (ex: ml → unid), aplique o valor mais razoável e registre em "reason".
 
 ## Unidades permitidas para a resposta
 unid · g · ml · kg · L · xícara · col. sopa · col. chá
 
 Responda em JSON com exatamente ${recipes.length} ajuste(s), um por receita:
-{"adjustments":[{"recipeId":"<id exato>","qty":<número>,"unit":"${ingredient.newUnit}","noChange":<true|false>,"reason":"<motivo em pt-BR se ajustado ou aviso dimensional>"}]}`;
+{"adjustments":[{"recipeId":"<id exato>","qty":<número>,"unit":"${ingredient.newUnit}","noChange":<true|false>,"reason":"<motivo em pt-BR>"}]}`;
 
   const raw     = await callAI(apiKey, prompt);
   const parsed  = JSON.parse(raw) as AdjustIngredientOutput;

@@ -128,14 +128,24 @@ const pantryRoutes: FastifyPluginAsync = async (server) => {
         const updated = await tx.ingredient.update({ where: { id }, data });
 
         if (factor !== null && newUnit) {
-          // Cascade: update qty and unit on every RecipeIngredient that uses
-          // this ingredient so recipes stay consistent with the new unit.
-          await tx.$executeRaw`
-            UPDATE "RecipeIngredient"
-            SET    qty  = qty * ${factor},
-                   unit = ${newUnit}
-            WHERE  "ingredientId" = ${id}
-          `;
+          // Cascade: only convert RecipeIngredients that are still in the old
+          // unit. This avoids double-converting recipes that already store the
+          // ingredient in a different unit (e.g. xícara instead of g).
+          // We do the multiplication in JavaScript to avoid raw-SQL type
+          // coercion issues (DOUBLE PRECISION * parameterized float can
+          // misbehave in some Prisma/PgBouncer setups).
+          const affected = await tx.recipeIngredient.findMany({
+            where: { ingredientId: id, unit: current.unit },
+            select: { id: true, qty: true },
+          });
+
+          for (const ri of affected) {
+            const converted = Math.round(ri.qty * factor * 1e9) / 1e9;
+            await tx.recipeIngredient.update({
+              where: { id: ri.id },
+              data:  { qty: converted, unit: newUnit },
+            });
+          }
         }
 
         return updated;
