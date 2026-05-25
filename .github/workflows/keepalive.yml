@@ -11,8 +11,11 @@ jobs:
     steps:
       - name: Ping health endpoint
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "${{ secrets.VITE_API_URL }}/health")
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "${{ secrets.VITE_API_URL }}/health" || echo "000")
           echo "Health check status: $STATUS"
           if [ "$STATUS" != "200" ]; then
-            echo "Warning: server returned $STATUS"
+            echo "Warning: server returned $STATUS — retrying in 30s..."
+            sleep 30
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "${{ secrets.VITE_API_URL }}/health" || echo "000")
+            echo "Retry status: $STATUS"
           fi
