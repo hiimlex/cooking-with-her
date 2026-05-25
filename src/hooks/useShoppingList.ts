@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { http } from '@/lib/http';
+import { http, API_BASE } from '@/lib/http';
 import {
   getShoppingList,
   addShoppingItem,
@@ -29,8 +29,7 @@ export function useShoppingList() {
     http.post<{ ticket: string }>('/shopping/events/ticket')
       .then(({ data }) => {
         if (!active) return;
-        const base = import.meta.env.VITE_API_URL ?? 'http://localhost:3333';
-        es = new EventSource(`${base}/shopping/events?ticket=${data.ticket}`);
+        es = new EventSource(`${API_BASE}/shopping/events?ticket=${data.ticket}`);
         es.onmessage = (e: MessageEvent) => {
           try {
             const payload = JSON.parse(e.data) as { type: string; items: any[]; suggestions: any[] };

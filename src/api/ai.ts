@@ -1,4 +1,4 @@
-import { http } from '@/lib/http';
+import { http, API_BASE } from '@/lib/http';
 import { ENDPOINTS } from '@shared/api';
 import type { AIGenerateBody } from '@shared/api';
 
@@ -116,9 +116,8 @@ export async function* streamIngredientSync(
   ingredientId: string,
   oldUnit:      string,
 ): AsyncGenerator<IngredientSyncEvent> {
-  const base  = import.meta.env.VITE_API_URL ?? 'http://localhost:3333';
   const token = localStorage.getItem('cwh_token') ?? '';
-  const url   = `${base}${ENDPOINTS.ai.ingredientSync}?ingredientId=${encodeURIComponent(ingredientId)}&oldUnit=${encodeURIComponent(oldUnit)}`;
+  const url   = `${API_BASE}${ENDPOINTS.ai.ingredientSync}?ingredientId=${encodeURIComponent(ingredientId)}&oldUnit=${encodeURIComponent(oldUnit)}`;
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
