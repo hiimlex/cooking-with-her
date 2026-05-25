@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Theme -->
+    <meta name="theme-color" content="#7c3aed" />
+    <meta name="background-color" content="#7c3aed" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+
+    <!-- iOS / iPadOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Cooking With Her" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <!-- Android Chrome splash -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Cooking With Her" />
+
+    <!-- SEO / social -->
+    <meta name="description" content="Your couples cooking companion — recipes, pantry, and meal planning together." />
+
+    <title>Cooking With Her</title>
+
+    <!-- Restore the path saved by 404.html (GitHub Pages SPA routing) -->
+    <script>
+      (function () {
+        var redirect = sessionStorage.getItem('spa_redirect');
+        if (redirect) {
+          sessionStorage.removeItem('spa_redirect');
+          history.replaceState(null, '', redirect);
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-BdKGdtc7.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Bl8zDMxh.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
