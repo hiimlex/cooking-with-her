@@ -1,10 +1,13 @@
-const CACHE_NAME = 'cwh-1779718060825';
+const CACHE_NAME = 'cwh-1779718141851';
+
+// Derive the base path from the SW's own location (e.g. /cooking-with-her/)
+const BASE = self.registration.scope;
 
 const PRECACHE_URLS = [
-  '/',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  BASE,
+  BASE + 'manifest.webmanifest',
+  BASE + 'icons/icon-192.png',
+  BASE + 'icons/icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -39,15 +42,15 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((c) => c.put(request, clone));
           return res;
         })
-        .catch(() => caches.match('/') ?? fetch(request)),
+        .catch(() => caches.match(BASE) ?? fetch(request)),
     );
     return;
   }
 
   // Static assets (JS, CSS, images, fonts) → cache-first
   if (
-    url.pathname.startsWith('/assets/') ||
-    url.pathname.startsWith('/icons/') ||
+    url.pathname.includes('/assets/') ||
+    url.pathname.includes('/icons/') ||
     /\.(png|jpg|jpeg|svg|webp|woff2?|ttf|ico)$/.test(url.pathname)
   ) {
     event.respondWith(
