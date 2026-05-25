@@ -1,3 +1,4 @@
+var _a;
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from 'tailwindcss';
@@ -20,6 +21,9 @@ function pwaPlugin() {
     };
 }
 export default defineConfig({
+    // VITE_BASE_PATH is injected by the GH Pages CI workflow.
+    // Locally and in Docker it stays '/' (the default).
+    base: (_a = process.env.VITE_BASE_PATH) !== null && _a !== void 0 ? _a : '/',
     plugins: [react(), pwaPlugin()],
     css: {
         postcss: {
