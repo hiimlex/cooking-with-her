@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
+import multipart from '@fastify/multipart';
 
 import prismaPlugin from './plugins/prisma';
 import authPlugin   from './plugins/auth';
@@ -34,6 +35,13 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(jwt, {
     secret: process.env.JWT_SECRET ?? 'cooking-with-her-dev-secret-change-in-prod',
+  });
+
+  await app.register(multipart, {
+    limits: {
+      fileSize: 15 * 1024 * 1024,
+      files:    1,
+    },
   });
 
   await app.register(prismaPlugin);

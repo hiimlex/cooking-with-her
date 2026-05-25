@@ -63,9 +63,10 @@ export const ENDPOINTS = {
     patch:  (id: string) => `/utensils/${id}`,
   },
   memories: {
-    list:   '/memories',
-    create: '/memories',
-    delete: (id: string) => `/memories/${id}`,
+    list:        '/memories',
+    create:      '/memories',
+    uploadPhoto: '/memories/upload-photo',
+    delete:      (id: string) => `/memories/${id}`,
   },
 } as const;
 

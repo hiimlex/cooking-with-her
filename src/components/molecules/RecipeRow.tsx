@@ -1,15 +1,15 @@
-// src/components/molecules/RecipeRow.tsx — horizontal row card for lists
 import { Avatar, Card, FoodIcon, Label, Rating } from '@/components/atoms';
 import { TAG_COLOR } from '@/components/atoms/Label';
 import { FOOD_GLYPHS, IcClock } from '@/icons';
 import type { Recipe } from '@/types';
 
 export interface RecipeRowProps {
-  recipe:   Recipe;
-  onClick?: () => void;
+  recipe:       Recipe;
+  memoryPhoto?: string;
+  onClick?:     () => void;
 }
 
-export function RecipeRow({ recipe, onClick }: RecipeRowProps) {
+export function RecipeRow({ recipe, memoryPhoto, onClick }: RecipeRowProps) {
   const accent      = FOOD_GLYPHS[recipe.sprites[0]].color;
   const cookability = recipe.cookability ?? 'ok';
   const unavailable = cookability === 'unavailable';
@@ -19,12 +19,20 @@ export function RecipeRow({ recipe, onClick }: RecipeRowProps) {
     <Card onClick={onClick} className="p-3 flex gap-3.5 items-center">
       <div
         className={[
-          'w-[60px] h-[60px] rounded-2xl flex items-center justify-center flex-shrink-0',
+          'w-[60px] h-[60px] rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden',
           unavailable ? 'opacity-50' : '',
         ].join(' ')}
         style={{ background: accent + '18' }}
       >
-        <FoodIcon name={recipe.sprites[0]} size={36} />
+        {memoryPhoto ? (
+          <img
+            src={memoryPhoto}
+            alt={recipe.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <FoodIcon name={recipe.sprites[0]} size={36} />
+        )}
       </div>
 
       <div className="flex-1 min-w-0">

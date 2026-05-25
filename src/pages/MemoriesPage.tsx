@@ -43,12 +43,20 @@ export function MemoriesPage() {
               return (
                 <Card key={m.id} className="p-0 overflow-hidden">
                   <div
-                    className="aspect-square flex items-center justify-center relative"
+                    className="aspect-square flex items-center justify-center relative overflow-hidden"
                     style={{
                       background: `linear-gradient(135deg, ${accent}30 0%, ${accent}15 100%)`,
                     }}
                   >
-                    <FoodIcon name={spriteId as any} size={64} />
+                    {m.photoUrl ? (
+                      <img
+                        src={m.photoUrl}
+                        alt={m.recipe.name}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <FoodIcon name={spriteId as any} size={64} />
+                    )}
                     <div className="absolute top-2 left-2 bg-card/90 rounded-full pl-1 pr-2 py-0.5 flex items-center gap-1 text-[11px] font-bold text-ink">
                       <Avatar who={m.by.personId as 'alex' | 'yuka'} size={18} />
                       {m.by.name}

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getRecipes } from '@/api/recipes';
 import { getStats } from '@/api/stats';
 import { getHistory } from '@/api/history';
+import { getMemories } from '@/api/memories';
 import { recipeCookability } from '@/utils/cookability';
 import type { Recipe, FoodGlyphId, Difficulty, RecipeTag } from '@/types';
 import type { RecipeDto, HistoryEntryDto } from '@/model/recipe';
@@ -84,11 +85,28 @@ export function useHomeData(filter: string, search: string) {
     queryFn:  () => getHistory({ limit: 1 }),
   });
 
+  const memoriesQuery = useQuery({
+    queryKey: ['memories'],
+    queryFn:  getMemories,
+  });
+
+  const memoryPhotoMap = useMemo<Record<string, string>>(() => {
+    const entries = memoriesQuery.data ?? [];
+    const map: Record<string, string> = {};
+    for (const m of entries) {
+      if (m.photoUrl && !map[m.recipeId]) {
+        map[m.recipeId] = m.photoUrl;
+      }
+    }
+    return map;
+  }, [memoriesQuery.data]);
+
   return {
-    recipes:     (recipesQuery.data ?? []).map(toRecipe),
-    stats:       statsQuery.data ?? null,
-    latestEntry: historyQuery.data?.entries[0] ? toMappedEntry(historyQuery.data.entries[0]) : null,
-    isLoading:   recipesQuery.isLoading || statsQuery.isLoading || historyQuery.isLoading,
-    isError:     recipesQuery.isError   || statsQuery.isError   || historyQuery.isError,
+    recipes:         (recipesQuery.data ?? []).map(toRecipe),
+    stats:           statsQuery.data ?? null,
+    latestEntry:     historyQuery.data?.entries[0] ? toMappedEntry(historyQuery.data.entries[0]) : null,
+    memoryPhotoMap,
+    isLoading:       recipesQuery.isLoading || statsQuery.isLoading || historyQuery.isLoading,
+    isError:         recipesQuery.isError   || statsQuery.isError   || historyQuery.isError,
   };
 }

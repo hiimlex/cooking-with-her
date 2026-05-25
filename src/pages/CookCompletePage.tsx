@@ -2,31 +2,11 @@ import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, FoodIcon } from '@/components/atoms';
-import { FOOD_GLYPHS, IcCheck, IcImage, IcStar, IcX } from '@/icons';
+import { FOOD_GLYPHS, IcCamera, IcCheck, IcImage, IcStar, IcX } from '@/icons';
 import { useRecipeDetail } from '@/hooks/useRecipeDetail';
 import { finishRecipe } from '@/api/recipes';
-import { createMemory } from '@/api/memories';
+import { createMemory, uploadMemoryPhoto } from '@/api/memories';
 import type { FoodGlyphId } from '@/types';
-
-function resizeImage(file: File, maxPx = 900, quality = 0.78): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
-      const w = Math.round(img.width  * scale);
-      const h = Math.round(img.height * scale);
-      const canvas = document.createElement('canvas');
-      canvas.width  = w;
-      canvas.height = h;
-      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
-}
 
 export function CookCompletePage() {
   const navigate    = useNavigate();
@@ -39,7 +19,9 @@ export function CookCompletePage() {
   const [note,         setNote]         = useState('');
   const [photo,        setPhoto]        = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const cameraRef  = useRef<HTMLInputElement>(null);
 
   const sprite0 = (recipe?.sprites[0]?.sprite ?? 'Tomato') as FoodGlyphId;
   const accent  = (FOOD_GLYPHS as Record<string, { color: string }>)[sprite0]?.color ?? '#7c3aed';
@@ -49,7 +31,7 @@ export function CookCompletePage() {
       await finishRecipe(id, { rating, note: note.trim() || undefined });
 
       if (photo) {
-        const photoUrl = await resizeImage(photo);
+        const photoUrl = await uploadMemoryPhoto(photo);
         await createMemory({
           recipeId: id,
           date:     new Date().toISOString(),
@@ -79,7 +61,8 @@ export function CookCompletePage() {
   const removePhoto = () => {
     setPhoto(null);
     setPhotoPreview(null);
-    if (fileRef.current) fileRef.current.value = '';
+    if (galleryRef.current) galleryRef.current.value = '';
+    if (cameraRef.current)  cameraRef.current.value  = '';
   };
 
   if (isLoading || !recipe) {
@@ -195,23 +178,46 @@ export function CookCompletePage() {
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className={[
-                'w-full h-[110px] rounded-2xl border-2 border-dashed border-canvas',
-                'flex flex-col items-center justify-center gap-2',
-                'text-subtle hover:text-accent hover:border-accent/40 transition-colors',
-              ].join(' ')}
-            >
-              <IcImage size={26} />
-              <span className="text-[13px] font-semibold">Adicionar foto</span>
-              <span className="text-[11px]">Toque para escolher da galeria</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => cameraRef.current?.click()}
+                className={[
+                  'h-[88px] rounded-2xl border-2 border-dashed border-canvas',
+                  'flex flex-col items-center justify-center gap-1.5',
+                  'text-subtle hover:text-accent hover:border-accent/40 transition-colors',
+                ].join(' ')}
+              >
+                <IcCamera size={22} />
+                <span className="text-[12px] font-semibold">Câmera</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => galleryRef.current?.click()}
+                className={[
+                  'h-[88px] rounded-2xl border-2 border-dashed border-canvas',
+                  'flex flex-col items-center justify-center gap-1.5',
+                  'text-subtle hover:text-accent hover:border-accent/40 transition-colors',
+                ].join(' ')}
+              >
+                <IcImage size={22} />
+                <span className="text-[12px] font-semibold">Galeria</span>
+              </button>
+            </div>
           )}
 
+          {/* Camera input — capture only */}
           <input
-            ref={fileRef}
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          {/* Gallery input — no capture */}
+          <input
+            ref={galleryRef}
             type="file"
             accept="image/*"
             className="hidden"

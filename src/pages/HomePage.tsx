@@ -23,7 +23,7 @@ export function HomePage() {
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
 
-  const { recipes: allRecipes, latestEntry, isLoading } = useHomeData(filter, search);
+  const { recipes: allRecipes, latestEntry, memoryPhotoMap, isLoading } = useHomeData(filter, search);
 
   // Na home, esconde receitas que não podem ser feitas (ingrediente obrigatório em falta)
   const recipes = allRecipes.filter((r) => r.cookability !== 'unavailable');
@@ -178,6 +178,7 @@ export function HomePage() {
             <RecipeCard
               key={r.id}
               recipe={r}
+              memoryPhoto={memoryPhotoMap[r.id]}
               onClick={() => navigate(`/recipe/${r.id}`)}
               onFavorite={() => favMutation.mutate(r.id)}
             />

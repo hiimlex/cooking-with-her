@@ -1,4 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
+import { uploadToCloudinary } from '../services/cloudinary';
 
 const memoriesRoutes: FastifyPluginAsync = async (server) => {
   const auth = { preHandler: [server.authenticate] };
@@ -15,13 +16,27 @@ const memoriesRoutes: FastifyPluginAsync = async (server) => {
     return reply.send(memories);
   });
 
+  // POST /memories/upload-photo  — multipart, returns { url }
+  server.post('/upload-photo', auth, async (request, reply) => {
+    const part = await request.file();
+    if (!part) {
+      return reply.status(400).send({ error: 'No file provided' });
+    }
+
+    const buffer   = await part.toBuffer();
+    const mimeType = part.mimetype || 'image/jpeg';
+
+    const result = await uploadToCloudinary(buffer, mimeType);
+    return reply.send({ url: result.url });
+  });
+
   // POST /memories
   server.post('/', auth, async (request, reply) => {
     const { userId } = request.user;
     const body = request.body as {
       recipeId: string;
-      date: string;
-      bg: string;
+      date:     string;
+      bg:       string;
       photoUrl?: string;
     };
 

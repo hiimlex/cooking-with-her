@@ -22,3 +22,14 @@ export async function createMemory(body: MemoryBody): Promise<MemoryDto> {
   const { data } = await http.post<MemoryDto>(ENDPOINTS.memories.create, body);
   return data;
 }
+
+export async function uploadMemoryPhoto(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await http.post<{ url: string }>(
+    ENDPOINTS.memories.uploadPhoto,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  );
+  return data.url;
+}

@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/atoms';
 import { RecipeRow, SubHeader } from '@/components/molecules';
 import { IcPlus } from '@/icons';
 import { getRecipes } from '@/api/recipes';
+import { getMemories } from '@/api/memories';
 import { recipeCookability } from '@/utils/cookability';
 import type { RecipeDto } from '@/model/recipe';
 import type { FoodGlyphId, Difficulty, RecipeTag } from '@/types';
@@ -34,14 +36,29 @@ function dtoToRow(dto: RecipeDto) {
 export function MyRecipesPage() {
   const navigate = useNavigate();
 
-  const { data: dtos = [], isLoading } = useQuery<RecipeDto[]>({
+  const { data: dtos = [], isLoading: recipesLoading } = useQuery<RecipeDto[]>({
     queryKey: ['recipes'],
     queryFn:  () => getRecipes(),
   });
 
+  const { data: memories = [] } = useQuery({
+    queryKey: ['memories'],
+    queryFn:  getMemories,
+  });
+
+  const memoryPhotoMap = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const m of memories) {
+      if (m.photoUrl && !map[m.recipeId]) {
+        map[m.recipeId] = m.photoUrl;
+      }
+    }
+    return map;
+  }, [memories]);
+
   const recipes = dtos.map(dtoToRow);
 
-  const sub = isLoading
+  const sub = recipesLoading
     ? 'Carregando…'
     : `${recipes.length} salva${recipes.length !== 1 ? 's' : ''} juntos`;
 
@@ -58,12 +75,17 @@ export function MyRecipesPage() {
         }
       />
       <div className="px-[18px] pt-2 flex flex-col gap-2.5">
-        {isLoading
+        {recipesLoading
           ? Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-[76px] bg-canvas rounded-2xl animate-pulse" />
             ))
           : recipes.map((r) => (
-              <RecipeRow key={r.id} recipe={r} onClick={() => navigate(`/recipe/${r.id}`)} />
+              <RecipeRow
+                key={r.id}
+                recipe={r}
+                memoryPhoto={memoryPhotoMap[r.id]}
+                onClick={() => navigate(`/recipe/${r.id}`)}
+              />
             ))}
       </div>
     </div>
