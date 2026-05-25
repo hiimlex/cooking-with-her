@@ -213,7 +213,7 @@ export function EditIngredientPage() {
         )}
 
         <FieldGroup label="Categoria">
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto max-w-full pb-1 scrollbar-none">
             {ICON_GROUPS.map(({ label, cat: groupCat }) => {
               const icon = CAT_ICON[groupCat];
               const c = FOOD_GLYPHS[icon].color;
@@ -222,7 +222,7 @@ export function EditIngredientPage() {
                 <button
                   key={label}
                   onClick={() => setCat(groupCat)}
-                  className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all flex-1"
+                  className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all shrink-0 min-w-[60px]"
                   style={{
                     background: sel ? c + "18" : "var(--c-card, #f5f3ff)",
                     border: sel

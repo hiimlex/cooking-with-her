@@ -4,7 +4,7 @@ import { IcDog, IcLock, IcUtensils } from "@/icons";
 import { setAuth } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 
 const PEOPLE = [
@@ -34,6 +34,13 @@ export function LoginPage() {
       }, 450);
     },
   });
+
+  useEffect(() => {
+    const color = who
+      ? (PEOPLE.find((p) => p.id === who)?.color ?? "#f3eefe")
+      : "#f3eefe";
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", color);
+  }, [who]);
 
   if (token) return <Navigate to="/home" replace />;
 
