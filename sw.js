@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cwh-1779715283233';
+const CACHE_NAME = 'cwh-1779715620796';
 
 const PRECACHE_URLS = [
   '/',
