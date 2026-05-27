@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cwh-1779851477453';
+const CACHE_NAME = 'cwh-1779885257500';
 
 // Derive the base path from the SW's own location (e.g. /cooking-with-her/)
 const BASE = self.registration.scope;
