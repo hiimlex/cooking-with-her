@@ -1,35 +1,46 @@
-import { Card, Chip, FoodIcon, Input, Label } from '@/components/atoms';
-import { FieldGroup } from '@/components/molecules';
-import { CAT_ICON, FOOD_GLYPHS } from '@/icons';
-import { UNITS } from '@/utils/units';
-import type { UseIngredientFormReturn } from '@/hooks/useIngredientForm';
+import { Card, Chip, FoodIcon, Input, Label } from "@/components/atoms";
+import { FieldGroup } from "@/components/molecules";
+import type { UseIngredientFormReturn } from "@/hooks/useIngredientForm";
+import { CAT_ICON, FOOD_GLYPHS } from "@/icons";
+import { UNITS } from "@/utils/units";
 
 const ICON_GROUPS = [
-  { label: 'Hortifruti', cat: 'Produce'  },
-  { label: 'Proteína',   cat: 'Protein'  },
-  { label: 'Laticínio',  cat: 'Dairy'    },
-  { label: 'Despensa',   cat: 'Pantry'   },
-  { label: 'Tempero',    cat: 'Spice'    },
-  { label: 'Outro',      cat: 'Other'    },
+  { label: "Hortifruti", cat: "Produce" },
+  { label: "Proteína", cat: "Protein" },
+  { label: "Laticínio", cat: "Dairy" },
+  { label: "Despensa", cat: "Pantry" },
+  { label: "Tempero", cat: "Spice" },
+  { label: "Outro", cat: "Other" },
 ] as const;
 
 export const SHELF_LIFE = [2, 5, 7, 14, 30, 90];
 
 interface IngredientFormProps {
-  form:       UseIngredientFormReturn;
+  form: UseIngredientFormReturn;
   autoFocus?: boolean;
 }
 
-export function IngredientForm({ form, autoFocus = false }: IngredientFormProps) {
+export function IngredientForm({
+  form,
+  autoFocus = false,
+}: IngredientFormProps) {
   const {
-    name, handleNameChange,
-    qty, setQty,
-    unit, setUnit,
-    cat, setCat,
-    expiry, setExpiry,
-    monthlyBuy, setMonthlyBuy,
-    hasMonthly, setHasMonthly,
-    alwaysAvailable, setAlwaysAvailable,
+    name,
+    handleNameChange,
+    qty,
+    setQty,
+    unit,
+    setUnit,
+    cat,
+    setCat,
+    expiry,
+    setExpiry,
+    monthlyBuy,
+    setMonthlyBuy,
+    hasMonthly,
+    setHasMonthly,
+    alwaysAvailable,
+    setAlwaysAvailable,
   } = form;
 
   return (
@@ -38,20 +49,22 @@ export function IngredientForm({ form, autoFocus = false }: IngredientFormProps)
       <div className="pb-[22px]">
         <Card
           className="p-5 flex items-center gap-4"
-          style={{ background: FOOD_GLYPHS[CAT_ICON[cat]].color + '12' }}
+          style={{ background: FOOD_GLYPHS[CAT_ICON[cat]].color + "12" }}
         >
           <div className="w-[72px] h-[72px] rounded-[20px] bg-card flex items-center justify-center flex-shrink-0">
             <FoodIcon name={CAT_ICON[cat]} size={44} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-lg font-extrabold text-ink tracking-[-0.3px] truncate">
-              {name || 'Sem nome'}
+              {name || "Sem nome"}
             </div>
             <div className="text-[13px] text-muted mt-0.5">
-              {qty || '—'} {unit} · {cat}
+              {qty || "—"} {unit} · {cat}
             </div>
             <div className="mt-1.5">
-              <Label color={expiry <= 3 ? 'red' : expiry <= 7 ? 'yellow' : 'green'}>
+              <Label
+                color={expiry <= 3 ? "red" : expiry <= 7 ? "yellow" : "green"}
+              >
                 {expiry}d de validade
               </Label>
             </div>
@@ -79,15 +92,15 @@ export function IngredientForm({ form, autoFocus = false }: IngredientFormProps)
             type="button"
             onClick={() => setAlwaysAvailable(!alwaysAvailable)}
             className={[
-              'w-11 h-6 rounded-full transition-colors flex-shrink-0',
-              alwaysAvailable ? 'bg-accent' : 'bg-subtle',
-            ].join(' ')}
+              "w-11 h-6 rounded-full transition-colors flex-shrink-0",
+              alwaysAvailable ? "bg-accent" : "bg-subtle",
+            ].join(" ")}
           >
             <span
               className={[
-                'block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5',
-                alwaysAvailable ? 'translate-x-5' : 'translate-x-0',
-              ].join(' ')}
+                "block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5",
+                alwaysAvailable ? "translate-x-5" : "translate-x-0",
+              ].join(" ")}
             />
           </button>
           {alwaysAvailable && (
@@ -99,34 +112,33 @@ export function IngredientForm({ form, autoFocus = false }: IngredientFormProps)
       </FieldGroup>
 
       {/* Quantity + unit */}
-      {!alwaysAvailable && (
-        <FieldGroup label="Quanto?">
-          <div className="flex items-center justify-between gap-2.5">
-            <Input
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              placeholder="0"
-              type="number"
-              className="flex-1 text-center h-[40px] font-bold flex-shrink-0"
-            />
-            <div className="flex flex-wrap gap-1.5">
-              {UNITS.map((u) => (
-                <Chip key={u} active={unit === u} onClick={() => setUnit(u)}>
-                  {u}
-                </Chip>
-              ))}
-            </div>
+
+      <FieldGroup label="Quanto?">
+        <div className="flex items-center justify-between gap-2.5">
+          <Input
+            value={qty}
+            onChange={(e) => setQty(e.target.value)}
+            placeholder="0"
+            type="number"
+            className="flex-1 text-center h-[40px] font-bold flex-shrink-0"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {UNITS.map((u) => (
+              <Chip key={u} active={unit === u} onClick={() => setUnit(u)}>
+                {u}
+              </Chip>
+            ))}
           </div>
-        </FieldGroup>
-      )}
+        </div>
+      </FieldGroup>
 
       {/* Category */}
       <FieldGroup label="Categoria" sub="Adivinhamos pelo nome">
         <div className="flex gap-2 overflow-x-auto max-w-full pb-1 scrollbar-none">
           {ICON_GROUPS.map(({ label, cat: groupCat }) => {
             const icon = CAT_ICON[groupCat];
-            const c    = FOOD_GLYPHS[icon].color;
-            const sel  = cat === groupCat;
+            const c = FOOD_GLYPHS[icon].color;
+            const sel = cat === groupCat;
             return (
               <button
                 key={label}
@@ -134,9 +146,9 @@ export function IngredientForm({ form, autoFocus = false }: IngredientFormProps)
                 onClick={() => setCat(groupCat)}
                 className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all shrink-0 min-w-[60px]"
                 style={{
-                  background:  sel ? c + '18' : 'var(--c-card, #f5f3ff)',
-                  border:      sel ? `1.5px solid ${c}` : '1.5px solid transparent',
-                  boxShadow:   sel ? `0 0 0 3px ${c}22` : undefined,
+                  background: sel ? c + "18" : "var(--c-card, #f5f3ff)",
+                  border: sel ? `1.5px solid ${c}` : "1.5px solid transparent",
+                  boxShadow: sel ? `0 0 0 3px ${c}22` : undefined,
                 }}
               >
                 <FoodIcon name={icon} size={28} />
@@ -155,7 +167,7 @@ export function IngredientForm({ form, autoFocus = false }: IngredientFormProps)
       {/* Expiry */}
       <FieldGroup
         label="Validade"
-        sub={`Avisamos quando ${name || 'isso'} estiver perto de vencer`}
+        sub={`Avisamos quando ${name || "isso"} estiver perto de vencer`}
       >
         <div className="flex flex-wrap gap-1.5">
           {SHELF_LIFE.map((d) => (
@@ -176,15 +188,15 @@ export function IngredientForm({ form, autoFocus = false }: IngredientFormProps)
             type="button"
             onClick={() => setHasMonthly(!hasMonthly)}
             className={[
-              'w-11 h-6 rounded-full transition-colors flex-shrink-0',
-              hasMonthly ? 'bg-accent' : 'bg-subtle',
-            ].join(' ')}
+              "w-11 h-6 rounded-full transition-colors flex-shrink-0",
+              hasMonthly ? "bg-accent" : "bg-subtle",
+            ].join(" ")}
           >
             <span
               className={[
-                'block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5',
-                hasMonthly ? 'translate-x-5' : 'translate-x-0',
-              ].join(' ')}
+                "block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5",
+                hasMonthly ? "translate-x-5" : "translate-x-0",
+              ].join(" ")}
             />
           </button>
           {hasMonthly && (

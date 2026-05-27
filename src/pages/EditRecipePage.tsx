@@ -29,11 +29,12 @@ export function EditRecipePage() {
       why:         recipe.why ?? '',
       steps:       recipe.steps.map((s) => ({ title: s.title, desc: s.desc, mins: s.mins })),
       ingredients: recipe.ingredients.map((i) => ({
-        ingredientId: i.ingredient.id,
-        name:         i.ingredient.name,
-        qty:          i.qty,
-        unit:         i.unit,
-        optional:     i.optional,
+        ingredientId:    i.ingredient.id,
+        name:            i.ingredient.name,
+        qty:             i.qty,
+        unit:            i.unit,
+        optional:        i.optional,
+        alwaysAvailable: i.ingredient.alwaysAvailable,
       })),
     });
   }, [recipe?.id]);

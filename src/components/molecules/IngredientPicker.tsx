@@ -7,13 +7,14 @@ import { UNITS, isDiscreteUnit, stepForUnit, defaultQtyForUnit, formatQtyForUnit
 import type { Ingredient } from '@/types';
 
 export interface PickedIngredient {
-  ingredientId: string;   // '' = ingrediente fora do estoque (ainda não cadastrado)
-  name:         string;
-  qty:          number;
-  unit:         string;
-  optional?:    boolean;  // true = não obrigatório na receita
-  notInPantry?: boolean;  // true = AI sugeriu mas não existe no estoque
-  cat?:         string;   // usado ao criar o item no estoque
+  ingredientId:    string;   // '' = ingrediente fora do estoque (ainda não cadastrado)
+  name:            string;
+  qty:             number;
+  unit:            string;
+  optional?:       boolean;  // true = não obrigatório na receita
+  notInPantry?:    boolean;  // true = AI sugeriu mas não existe no estoque
+  cat?:            string;   // usado ao criar o item no estoque
+  alwaysAvailable?: boolean; // true = tempero/básico que não desconta do estoque
 }
 
 interface Props {
@@ -30,10 +31,14 @@ function clampQty(qty: number, max: number, unit: string): number {
 
 const PRODUCE_EXCEPTIONS = ['batata', 'cenoura'];
 
-function isUntrackedIngredient(ing: Ingredient | PickedIngredient): boolean {
-  if ('alwaysAvailable' in ing && ing.alwaysAvailable) return true;
+function isFreeFormIngredient(ing: Ingredient | PickedIngredient): boolean {
   if (ing.cat !== 'Produce') return false;
   return !PRODUCE_EXCEPTIONS.some((ex) => ing.name.toLowerCase().includes(ex));
+}
+
+function hasUnlimitedStock(ing: Ingredient | PickedIngredient): boolean {
+  if ('alwaysAvailable' in ing && ing.alwaysAvailable) return true;
+  return isFreeFormIngredient(ing);
 }
 
 export function IngredientPicker({ value, onChange }: Props) {
@@ -71,12 +76,13 @@ export function IngredientPicker({ value, onChange }: Props) {
     : [];
 
   const addIngredient = (ing: Ingredient) => {
-    const untracked = isUntrackedIngredient(ing);
-    const stock     = untracked ? Infinity : ing.qty;
-    const qty       = untracked ? 1 : clampQty(defaultQtyForUnit(ing.unit), stock, ing.unit);
+    const freeForm   = isFreeFormIngredient(ing);
+    const unlimitedStock = hasUnlimitedStock(ing);
+    const stock      = unlimitedStock ? Infinity : ing.qty;
+    const qty        = freeForm ? 1 : clampQty(defaultQtyForUnit(ing.unit), stock, ing.unit);
     onChange([
       ...value,
-      { ingredientId: ing.id, name: ing.name, qty, unit: ing.unit, cat: ing.cat, notInPantry: false },
+      { ingredientId: ing.id, name: ing.name, qty, unit: ing.unit, cat: ing.cat, notInPantry: false, alwaysAvailable: ing.alwaysAvailable },
     ]);
     setSearch('');
     setDebouncedSearch('');
@@ -92,7 +98,7 @@ export function IngredientPicker({ value, onChange }: Props) {
     const draft = drafts[key];
     if (!ing || draft === undefined) return;
 
-    const stock = ing.notInPantry ? Infinity : (pantryStockMap[ing.ingredientId] ?? Infinity);
+    const stock = (ing.notInPantry || ing.alwaysAvailable) ? Infinity : (pantryStockMap[ing.ingredientId] ?? Infinity);
     const qty   = clampQty(parseFloat(draft) || 0, stock, ing.unit);
 
     onChange(value.map((v) => (v.ingredientId || v.name) === key ? { ...v, qty } : v));
@@ -165,15 +171,15 @@ export function IngredientPicker({ value, onChange }: Props) {
           {value.map((ing) => {
             const key         = ing.ingredientId || ing.name;
             const notInPantry = ing.notInPantry ?? false;
-            const untracked   = isUntrackedIngredient(ing);
-            const stock       = (notInPantry || untracked) ? Infinity : (pantryStockMap[ing.ingredientId] ?? Infinity);
+            const freeForm    = isFreeFormIngredient(ing);
+            const stock       = (notInPantry || hasUnlimitedStock(ing)) ? Infinity : (pantryStockMap[ing.ingredientId] ?? Infinity);
             const step        = stepForUnit(ing.unit);
             const discrete    = isDiscreteUnit(ing.unit);
             const draftVal    = drafts[key];
             const displayVal  = draftVal !== undefined ? draftVal : formatQtyForUnit(ing.qty, ing.unit);
             const parsedQty   = draftVal !== undefined ? (parseFloat(draftVal) || 0) : ing.qty;
-            const overStock   = !notInPantry && !untracked && parsedQty > stock;
-            const atMax       = !notInPantry && !untracked && stock !== Infinity && ing.qty >= stock && draftVal === undefined;
+            const overStock   = !notInPantry && !freeForm && !ing.alwaysAvailable && parsedQty > stock;
+            const atMax       = !notInPantry && !freeForm && !ing.alwaysAvailable && stock !== Infinity && ing.qty >= stock && draftVal === undefined;
 
             return (
               <div
@@ -193,7 +199,7 @@ export function IngredientPicker({ value, onChange }: Props) {
                     <span className="text-sm font-semibold text-ink truncate">
                       {ing.name}
                     </span>
-                    {untracked ? (
+                    {freeForm ? (
                       <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 border border-green-300 text-green-700">
                         livre
                       </span>
@@ -217,7 +223,7 @@ export function IngredientPicker({ value, onChange }: Props) {
                     <span className="text-[10px] font-semibold text-amber-600">
                       Fora do estoque — será criado ao salvar
                     </span>
-                  ) : untracked ? (
+                  ) : freeForm ? (
                     <span className="text-[10px] font-semibold text-green-700">
                       Não desconta do estoque ao cozinhar
                     </span>
@@ -233,8 +239,8 @@ export function IngredientPicker({ value, onChange }: Props) {
                   ) : null}
                 </div>
 
-                {/* Unit selector + qty input — hidden for untracked (a gosto) */}
-                {untracked ? (
+                {/* Unit selector + qty input — hidden for free-form produce (a gosto) */}
+                {freeForm ? (
                   <span className="text-[11px] font-semibold text-green-700 flex-shrink-0 px-2">
                     a gosto
                   </span>

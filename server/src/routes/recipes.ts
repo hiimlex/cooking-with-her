@@ -13,7 +13,7 @@ const recipesRoutes: FastifyPluginAsync = async (server) => {
       where: {
         ...(tag        && { tag }),
         ...(difficulty && { difficulty }),
-        ...(search     && { name: { contains: search } }),
+        ...(search     && { name: { contains: search, mode: 'insensitive' as const } }),
         ...(timeMax    && { time: { lte: parseInt(timeMax) } }),
         ...(favorite === 'true' && { favorite: true }),
       },

@@ -95,7 +95,7 @@ export function RecipeDetailPage() {
         </button>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigate(`/recipe/${id}/edit`)}
+            onClick={() => navigate(`/recipe/${id}/edit`, { replace: true })}
             className="glass-soft w-[42px] h-[42px] rounded-full inline-flex items-center justify-center text-ink"
           >
             <IcPencil size={16} />

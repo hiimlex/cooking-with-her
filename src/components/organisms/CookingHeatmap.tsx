@@ -81,7 +81,8 @@ export function CookingHeatmap({ weeks = 12, data, orders, recipes, onRecipePres
         const cell = new Date(start);
         cell.setDate(start.getDate() + w * 7 + d);
         const key = cell.toISOString().split('T')[0];
-        col.push({ date: key, count: data?.[key] ?? 0, future: key > todayStr });
+        if (key > todayStr) break;
+        col.push({ date: key, count: data?.[key] ?? 0, future: false });
 
         if (d === 0 && cell.getMonth() !== prevMonth) {
           markers.push({ col: w, label: MONTH_SHORT[cell.getMonth()] });
@@ -190,12 +191,12 @@ export function CookingHeatmap({ weeks = 12, data, orders, recipes, onRecipePres
                   key={cell.date}
                   className={[
                     'rounded-[3px] flex-shrink-0',
-                    !cell.future && (cell.count > 0 || orders?.[cell.date]) ? 'cursor-pointer' : 'cursor-default',
+                    (cell.count > 0 || orders?.[cell.date]) ? 'cursor-pointer' : 'cursor-default',
                   ].join(' ')}
                   style={{
                     width:      cellSize,
                     height:     cellSize,
-                    background: cell.future ? 'transparent' : cellBg(cell.count, orders?.[cell.date] ?? false),
+                    background: cellBg(cell.count, orders?.[cell.date] ?? false),
                   }}
                   onClick={(e) => handleCellClick(e, cell)}
                 />

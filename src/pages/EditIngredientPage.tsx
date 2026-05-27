@@ -120,6 +120,7 @@ export function EditIngredientPage() {
           newUnit={form.unit}
           onDone={() => {
             qc.invalidateQueries({ queryKey: ['recipes'] });
+            qc.removeQueries({ queryKey: ['recipe'] });
             navigate('/pantry');
           }}
         />
