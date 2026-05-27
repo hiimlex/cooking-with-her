@@ -34,6 +34,8 @@ model User {
   shoppingItems ShoppingEntry[]
   memories      Memory[]
   recipes       Recipe[]
+
+  @@index([coupleId])
 }
 
 // ─── Recipes ────────────────────────────────────────────────────────────────
@@ -64,6 +66,11 @@ model Recipe {
   sprites     RecipeSprite[]
   history     HistoryEntry[]
   memories    Memory[]
+
+  @@index([byId])
+  @@index([tag])
+  @@index([favorite])
+  @@index([cookedCount])
 }
 
 model RecipeSprite {
@@ -123,6 +130,9 @@ model Ingredient {
 
   recipeUses    RecipeIngredient[]
   shoppingItems ShoppingEntry[]
+
+  @@index([cat])
+  @@index([expiry])
 }
 
 // ─── Shopping ───────────────────────────────────────────────────────────────
@@ -140,6 +150,9 @@ model ShoppingEntry {
 
   ingredientId String?
   ingredient   Ingredient? @relation(fields: [ingredientId], references: [id])
+
+  @@index([done])
+  @@index([byId])
 }
 
 // ─── Utensils ───────────────────────────────────────────────────────────────
@@ -165,6 +178,11 @@ model HistoryEntry {
 
   byId String
   by   User   @relation(fields: [byId], references: [id])
+
+  @@index([byId])
+  @@index([recipeId])
+  @@index([mealType])
+  @@index([cookedAt])
 }
 
 // ─── Order entries ──────────────────────────────────────────────────────────
@@ -177,6 +195,9 @@ model OrderEntry {
 
   coupleId String
   couple   Couple @relation(fields: [coupleId], references: [id])
+
+  @@index([coupleId])
+  @@index([date])
 }
 
 // ─── Memories ───────────────────────────────────────────────────────────────
@@ -193,4 +214,8 @@ model Memory {
 
   byId String
   by   User   @relation(fields: [byId], references: [id])
+
+  @@index([byId])
+  @@index([recipeId])
+  @@index([date])
 }

@@ -21,7 +21,7 @@ export function TabScrollContainer({ children }: Props) {
   const showIndicator = pulling || refreshing;
 
   return (
-    <div ref={ref} className="h-full overflow-y-auto overflow-x-hidden no-scrollbar pb-[120px]">
+    <div ref={ref} className="h-full overflow-y-auto overflow-x-hidden no-scrollbar pb-[120px]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
 
       {/* Pull indicator */}
       <div

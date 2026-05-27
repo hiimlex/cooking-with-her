@@ -7,79 +7,123 @@ const statsRoutes: FastifyPluginAsync = async (server) => {
   server.get('/', auth, async (request, reply) => {
     const { coupleId } = request.user;
 
-    // All users in couple
-    const users = await server.prisma.user.findMany({ where: { coupleId } });
+    // Step 1 — users + couple in parallel (no userIds needed yet)
+    const [users, couple] = await Promise.all([
+      server.prisma.user.findMany({
+        where:  { coupleId },
+        select: { id: true, personId: true },
+      }),
+      server.prisma.couple.findUnique({
+        where:  { id: coupleId },
+        select: { weekGoal: true, startedDate: true },
+      }),
+    ]);
+
     const userIds = users.map((u: any) => u.id);
 
-    const allHistory = await server.prisma.historyEntry.findMany({
-      where:   { byId: { in: userIds } },
-      orderBy: { cookedAt: 'asc' },
-      include: { recipe: true, by: true },
-    });
-
-    // Stats are computed only from guided dinners; free/avulso entries are excluded.
-    const dinnerHistory = allHistory.filter((h: any) => (h.mealType ?? 'dinner') === 'dinner');
-
-    const totalCooked = dinnerHistory.length;
-    const avgRating   = totalCooked
-      ? dinnerHistory.reduce((s: number, h: any) => s + h.rating, 0) / totalCooked
-      : 0;
-
-    // Per-person counts
-    const byAlex = dinnerHistory.filter((h: any) => h.by.personId === 'alex').length;
-    const byYuka = dinnerHistory.filter((h: any) => h.by.personId === 'yuka').length;
-
-    // Current streak — consecutive days with at least one cook
-    const streak = calcStreak(dinnerHistory);
-
-    // This week count — Monday to Friday only
+    // Week boundaries (Mon–Fri only)
     const now = new Date();
     const daysSinceMonday = (now.getDay() + 6) % 7;
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - daysSinceMonday);
     weekStart.setHours(0, 0, 0, 0);
-    const weekCount = dinnerHistory.filter((h: any) => {
+
+    // 90-day cutoff for heatmap
+    const cutoff90 = new Date();
+    cutoff90.setDate(cutoff90.getDate() - 90);
+
+    // Step 2 — parallel queries, all using indexes, minimal data transferred
+    const [
+      dinnerAggregate,
+      dinnerByPerson,
+      dinnerDates,      // only cookedAt — for streak + weekCount
+      topRecipesRaw,    // groupBy recipeId
+      cuisineTagsRaw,   // only recipe.tag
+      heatmapEntries,   // last 90 days — cookedAt + recipe.{id,name}
+    ] = await Promise.all([
+
+      // Total dinners + avg rating — single aggregate, no rows returned
+      server.prisma.historyEntry.aggregate({
+        where: { byId: { in: userIds }, mealType: 'dinner' },
+        _count: { _all: true },
+        _avg:   { rating: true },
+      }),
+
+      // Per-person dinner counts — groupBy, no rows
+      server.prisma.historyEntry.groupBy({
+        by:    ['byId'],
+        where: { byId: { in: userIds }, mealType: 'dinner' },
+        _count: { _all: true },
+      }),
+
+      // Only dates for streak/weekCount — tiny payload
+      server.prisma.historyEntry.findMany({
+        where:   { byId: { in: userIds }, mealType: 'dinner' },
+        select:  { cookedAt: true },
+        orderBy: { cookedAt: 'asc' },
+      }),
+
+      // Top 3 recipes by cook count — groupBy, no recipe rows
+      server.prisma.historyEntry.groupBy({
+        by:     ['recipeId'],
+        where:  { byId: { in: userIds }, mealType: 'dinner' },
+        _count: { _all: true },
+        orderBy: { _count: { recipeId: 'desc' } },
+        take:   3,
+      }),
+
+      // Cuisine mix — only tag, no other recipe fields
+      server.prisma.historyEntry.findMany({
+        where:  { byId: { in: userIds }, mealType: 'dinner' },
+        select: { recipe: { select: { tag: true } } },
+      }),
+
+      // Heatmap — last 90 days, all meal types, minimal fields
+      server.prisma.historyEntry.findMany({
+        where:   { byId: { in: userIds }, cookedAt: { gte: cutoff90 } },
+        select:  { cookedAt: true, recipe: { select: { id: true, name: true } } },
+        orderBy: { cookedAt: 'asc' },
+      }),
+    ]);
+
+    // Derived values
+    const totalCooked = dinnerAggregate._count._all;
+    const avgRating   = dinnerAggregate._avg.rating ?? 0;
+
+    const alexId = users.find((u: any) => u.personId === 'alex')?.id;
+    const yukaId = users.find((u: any) => u.personId === 'yuka')?.id;
+    const byAlex = dinnerByPerson.find((r: any) => r.byId === alexId)?._count._all ?? 0;
+    const byYuka = dinnerByPerson.find((r: any) => r.byId === yukaId)?._count._all ?? 0;
+
+    const streak        = calcStreak(dinnerDates);
+    const longestStreak = calcLongestStreak(dinnerDates);
+
+    // Week count — Mon–Fri filter in JS (no raw SQL needed, dinnerDates is already small)
+    const weekCount = dinnerDates.filter((h: any) => {
       const d   = new Date(h.cookedAt);
       const dow = d.getDay();
       return d >= weekStart && dow >= 1 && dow <= 5;
     }).length;
 
-    const couple = await server.prisma.couple.findUnique({ where: { id: coupleId } });
+    const topRecipes = topRecipesRaw.map((r: any) => r.recipeId);
 
-    // Top recipes (dinners only)
-    const recipeCounts: Record<string, number> = {};
-    for (const h of dinnerHistory) {
-      recipeCounts[h.recipeId] = (recipeCounts[h.recipeId] ?? 0) + 1;
-    }
-    const topRecipes = Object.entries(recipeCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 3)
-      .map(([id]) => id);
-
-    // Cuisine mix by tag (dinners only)
+    // Cuisine mix
+    const tagColors: Record<string, string> = {
+      Dinner: '#7c3aed', Brunch: '#db2777', Lunch: '#0284c7',
+      Weekday: '#16a34a', Snack: '#d97706', AI: '#6d28d9',
+    };
     const tagCounts: Record<string, number> = {};
-    for (const h of dinnerHistory) {
-      const tag = h.recipe.tag;
+    for (const h of cuisineTagsRaw) {
+      const tag = (h as any).recipe.tag;
       tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
     }
-    const tagColors: Record<string, string> = {
-      Dinner: '#7c3aed',
-      Brunch: '#db2777',
-      Lunch:  '#0284c7',
-      Weekday:'#16a34a',
-      Snack:  '#d97706',
-      AI:     '#6d28d9',
-    };
     const cuisineMix = Object.entries(tagCounts).map(([name, count]) => ({
       name,
       pct:   Math.round((count / (totalCooked || 1)) * 100),
       color: tagColors[name] ?? '#888',
     }));
 
-    // Heatmap — last 90 days (all entries so a full picture of activity is shown)
-    const { heatmap, heatmapRecipes } = buildHeatmap(allHistory);
-
-    const longestStreak = calcLongestStreak(dinnerHistory);
+    const { heatmap, heatmapRecipes } = buildHeatmap(heatmapEntries as any);
 
     return reply.send({
       totalCooked,
@@ -87,10 +131,10 @@ const statsRoutes: FastifyPluginAsync = async (server) => {
       longestStreak,
       byAlex,
       byYuka,
-      avgRating:    Math.round(avgRating * 10) / 10,
+      avgRating:   Math.round(avgRating * 10) / 10,
       weekCount,
-      weekGoal:     couple?.weekGoal ?? 5,
-      startedDate:  couple?.startedDate
+      weekGoal:    couple?.weekGoal ?? 5,
+      startedDate: couple?.startedDate
         ? new Date(couple.startedDate).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })
         : undefined,
       topRecipes,
@@ -104,8 +148,8 @@ const statsRoutes: FastifyPluginAsync = async (server) => {
 function prevWeekday(dateStr: string): string {
   const d = new Date(dateStr);
   d.setDate(d.getDate() - 1);
-  if (d.getDay() === 0) d.setDate(d.getDate() - 2); // skip Sun → Fri
-  if (d.getDay() === 6) d.setDate(d.getDate() - 1); // skip Sat → Fri
+  if (d.getDay() === 0) d.setDate(d.getDate() - 2);
+  if (d.getDay() === 6) d.setDate(d.getDate() - 1);
   return d.toISOString().split('T')[0];
 }
 
@@ -122,10 +166,9 @@ function calcStreak(history: Array<{ cookedAt: Date }>): number {
     weekdayCooks.map((h) => h.cookedAt.toISOString().split('T')[0]),
   )].sort().reverse();
 
-  const today = new Date();
-  let cursor = today.toISOString().split('T')[0];
-  // If today is weekend, start from last Friday
+  const today    = new Date();
   const todayDow = today.getDay();
+  let cursor     = today.toISOString().split('T')[0];
   if (todayDow === 0) { const f = new Date(today); f.setDate(f.getDate() - 2); cursor = f.toISOString().split('T')[0]; }
   if (todayDow === 6) { const f = new Date(today); f.setDate(f.getDate() - 1); cursor = f.toISOString().split('T')[0]; }
 
@@ -138,7 +181,6 @@ function calcStreak(history: Array<{ cookedAt: Date }>): number {
       break;
     }
   }
-
   return streak;
 }
 
@@ -157,17 +199,14 @@ function calcLongestStreak(history: Array<{ cookedAt: Date }>): number {
 
   let longest = 1;
   let current = 1;
-
   for (let i = 1; i < uniqueDays.length; i++) {
-    const expected = prevWeekday(uniqueDays[i]);
-    if (expected === uniqueDays[i - 1]) {
+    if (prevWeekday(uniqueDays[i]) === uniqueDays[i - 1]) {
       current++;
       if (current > longest) longest = current;
     } else {
       current = 1;
     }
   }
-
   return longest;
 }
 
@@ -175,14 +214,10 @@ function buildHeatmap(history: Array<{ cookedAt: Date; recipe: { id: string; nam
   heatmap: Record<string, number>;
   heatmapRecipes: Record<string, { id: string; name: string }[]>;
 } {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 90);
-
-  const counts: Record<string, number> = {};
+  const counts:  Record<string, number>                    = {};
   const recipes: Record<string, { id: string; name: string }[]> = {};
 
   for (const h of history) {
-    if (h.cookedAt < cutoff) continue;
     const key = h.cookedAt.toISOString().split('T')[0];
     counts[key] = (counts[key] ?? 0) + 1;
     if (!recipes[key]) recipes[key] = [];

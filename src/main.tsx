@@ -27,7 +27,11 @@ import { API_BASE } from '@/lib/http';
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 1, staleTime: 1000 * 60 * 5 },
+    queries: {
+      retry:     1,
+      staleTime: 1000 * 60 * 5,   // 5 min — revalida em background mas serve do cache
+      gcTime:    1000 * 60 * 60,  // 1 h  — mantém no cache ao navegar entre abas
+    },
   },
 });
 

@@ -18,12 +18,21 @@ const recipesRoutes: FastifyPluginAsync = async (server) => {
         ...(favorite === 'true' && { favorite: true }),
       },
       include: {
-        by:          true,
-        sprites:     true,
-        nutrition:   true,
-        ingredients: { include: { ingredient: true }, orderBy: { id: 'asc' } },
-        steps:       { orderBy: { order: 'asc' } },
-        _count:      { select: { history: true } },
+        by:      true,
+        sprites: true,
+        // nutrition e steps não são usados nos cards — omitidos na lista
+        ingredients: {
+          select: {
+            id:       true,
+            qty:      true,
+            unit:     true,
+            optional: true,
+            ingredient: {
+              select: { id: true, qty: true, unit: true, alwaysAvailable: true },
+            },
+          },
+          orderBy: { id: 'asc' },
+        },
       },
       orderBy: { cookedCount: 'desc' },
     });
@@ -210,7 +219,7 @@ const recipesRoutes: FastifyPluginAsync = async (server) => {
   server.post('/:id/finish', auth, async (request, reply) => {
     const { id }     = request.params as { id: string };
     const { userId } = request.user;
-    const { rating = 5, note, mealType = 'dinner' } = request.body as { rating?: number; note?: string; mealType?: string };
+    const { rating = 5, note, mealType = 'dinner', cookedAt } = request.body as { rating?: number; note?: string; mealType?: string; cookedAt?: string };
 
     const userExists = await server.prisma.user.findUnique({ where: { id: userId } });
     if (!userExists) return reply.status(401).send({ error: 'Sessão expirada. Faça login novamente.' });
@@ -231,25 +240,22 @@ const recipesRoutes: FastifyPluginAsync = async (server) => {
       return !PRODUCE_EXCEPTIONS.some((ex) => nameLower.includes(ex));
     };
 
-    // Descontar ingredientes — pula alwaysAvailable, opcionais e hortaliças genéricas
+    // Descontar ingredientes — pula alwaysAvailable, opcionais e hortaliças genéricas.
+    // ri.ingredient.qty já vem no include acima — sem N+1.
     await Promise.all(
       recipe.ingredients
         .filter((ri) => !isUntracked(ri) && !ri.optional)
-        .map(async (ri) => {
-          const current = await server.prisma.ingredient.findUnique({
-            where: { id: ri.ingredientId }, select: { qty: true },
-          });
-          if (!current) return;
-          await server.prisma.ingredient.update({
+        .map((ri) =>
+          server.prisma.ingredient.update({
             where: { id: ri.ingredientId },
-            data:  { qty: Math.max(0, current.qty - ri.qty) },
-          });
-        }),
+            data:  { qty: Math.max(0, ri.ingredient.qty - ri.qty) },
+          }),
+        ),
     );
 
     const [entry] = await Promise.all([
       server.prisma.historyEntry.create({
-        data:    { recipeId: id, byId: userId, rating, note, mealType },
+        data:    { recipeId: id, byId: userId, rating, note, mealType, ...(cookedAt ? { cookedAt: new Date(cookedAt) } : {}) },
         include: { recipe: { include: { sprites: true } }, by: true },
       }),
       server.prisma.recipe.update({

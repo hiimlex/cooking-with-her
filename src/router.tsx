@@ -21,6 +21,7 @@ import {
   StatsPage,
   UsPage,
   UtensilsPage,
+  LogPastDinnerPage,
 } from "./pages";
 import { useAppSelector } from "./store/hooks";
 
@@ -68,6 +69,7 @@ export function AppRouter() {
         <Route path="/us/utensils" element={<UtensilsPage />} />
         <Route path="/us/memories" element={<MemoriesPage />} />
         <Route path="/us/settings" element={<SettingsPage />} />
+        <Route path="/us/log-past" element={<LogPastDinnerPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

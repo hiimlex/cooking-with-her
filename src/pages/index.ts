@@ -18,3 +18,4 @@ export * from './AddRecipePage';
 export * from './SettingsPage';
 export * from './EditRecipePage';
 export * from './EditIngredientPage';
+export * from './LogPastDinnerPage';

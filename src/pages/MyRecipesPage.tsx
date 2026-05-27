@@ -25,9 +25,9 @@ function dtoToRow(dto: RecipeDto) {
     servings:     dto.servings,
     why:          dto.why,
     nutrition:    dto.nutrition,
-    sprites:      dto.sprites.map((s) => s.sprite) as FoodGlyphId[],
+    sprites:      (dto.sprites ?? []).map((s) => s.sprite) as FoodGlyphId[],
     ingredients:  dto.ingredients.map((i) => ({ id: i.ingredient.id, qty: i.qty, unit: i.unit })),
-    steps:        dto.steps.map((s) => ({ t: s.title, d: s.desc, mins: s.mins })),
+    steps:        (dto.steps ?? []).map((s) => ({ t: s.title, d: s.desc, mins: s.mins })),
     favorite:     dto.favorite ?? false,
     cookability:  recipeCookability(dto),
   };

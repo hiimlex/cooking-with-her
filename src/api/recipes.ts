@@ -37,7 +37,7 @@ export async function updateRecipe(
 
 export async function finishRecipe(
   id: string,
-  body: { rating?: number; note?: string; mealType?: 'dinner' | 'free' } = {},
+  body: { rating?: number; note?: string; mealType?: 'dinner' | 'free'; cookedAt?: string } = {},
 ): Promise<void> {
   await http.post(ENDPOINTS.recipes.finish(id), body);
 }

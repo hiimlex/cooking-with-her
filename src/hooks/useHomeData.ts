@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getRecipes } from '@/api/recipes';
-import { getStats } from '@/api/stats';
-import { getHistory } from '@/api/history';
+import { getLatestEntry } from '@/api/history';
 import { getMemories } from '@/api/memories';
 import { recipeCookability } from '@/utils/cookability';
 import type { Recipe, FoodGlyphId, Difficulty, RecipeTag } from '@/types';
-import type { RecipeDto, HistoryEntryDto } from '@/model/recipe';
+import type { RecipeDto } from '@/model/recipe';
+import type { LatestEntryDto } from '@/api/history';
 
 function useDebounce<T>(value: T, ms: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -32,9 +32,9 @@ function toRecipe(dto: RecipeDto): Recipe {
     servings:     dto.servings,
     why:          dto.why,
     nutrition:    dto.nutrition,
-    sprites:      dto.sprites.map((s) => s.sprite) as FoodGlyphId[],
+    sprites:      (dto.sprites ?? []).map((s) => s.sprite) as FoodGlyphId[],
     ingredients:  dto.ingredients.map((i) => ({ id: i.ingredient.id, qty: i.qty, unit: i.unit })),
-    steps:        dto.steps.map((s) => ({ t: s.title, d: s.desc, mins: s.mins })),
+    steps:        (dto.steps ?? []).map((s) => ({ t: s.title, d: s.desc, mins: s.mins })),
     favorite:     dto.favorite ?? false,
     cookability:  recipeCookability(dto),
   };
@@ -49,12 +49,12 @@ export interface MappedHistoryEntry {
   rating:       number;
 }
 
-function toMappedEntry(dto: HistoryEntryDto): MappedHistoryEntry {
+function toMappedEntry(dto: LatestEntryDto): MappedHistoryEntry {
   return {
     recipeId:     dto.recipe.id,
     recipeName:   dto.recipe.name,
     recipeSprite: (dto.recipe.sprites[0]?.sprite ?? 'Tomato') as FoodGlyphId,
-    by:           dto.by.personId,
+    by:           dto.by.personId as 'alex' | 'yuka',
     byName:       dto.by.name,
     rating:       dto.rating,
   };
@@ -75,14 +75,9 @@ export function useHomeData(filter: string, search: string) {
     queryFn:  () => getRecipes(params),
   });
 
-  const statsQuery = useQuery({
-    queryKey: ['stats'],
-    queryFn:  getStats,
-  });
-
-  const historyQuery = useQuery({
+  const latestQuery = useQuery({
     queryKey: ['history', 'latest'],
-    queryFn:  () => getHistory({ limit: 1 }),
+    queryFn:  getLatestEntry,
   });
 
   const memoriesQuery = useQuery({
@@ -102,11 +97,10 @@ export function useHomeData(filter: string, search: string) {
   }, [memoriesQuery.data]);
 
   return {
-    recipes:         (recipesQuery.data ?? []).map(toRecipe),
-    stats:           statsQuery.data ?? null,
-    latestEntry:     historyQuery.data?.entries[0] ? toMappedEntry(historyQuery.data.entries[0]) : null,
+    recipes:      (recipesQuery.data ?? []).map(toRecipe),
+    latestEntry:  latestQuery.data ? toMappedEntry(latestQuery.data) : null,
     memoryPhotoMap,
-    isLoading:       recipesQuery.isLoading || statsQuery.isLoading || historyQuery.isLoading,
-    isError:         recipesQuery.isError   || statsQuery.isError   || historyQuery.isError,
+    isLoading:    recipesQuery.isLoading || latestQuery.isLoading,
+    isError:      recipesQuery.isError   || latestQuery.isError,
   };
 }

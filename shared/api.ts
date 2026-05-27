@@ -47,7 +47,8 @@ export const ENDPOINTS = {
     checkout:  '/shopping/checkout',
   },
   history: {
-    list: '/history',
+    list:   '/history',
+    latest: '/history/latest',
   },
   stats: {
     get: '/stats',
@@ -141,6 +142,8 @@ export interface CookBody {
   rating:    number;
   note?:     string;
   mealType?: MealType;
+  /** ISO date string — omit to default to now() on the server */
+  cookedAt?: string;
 }
 
 export interface ShoppingItemBody {

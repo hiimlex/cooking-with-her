@@ -10,6 +10,7 @@ import { improveStepsAI } from '@/api/ai';
 import { toggleFavorite, updateRecipe } from '@/api/recipes';
 import { diffPT } from '@/utils/labels';
 import { formatQtyForUnit } from '@/utils/units';
+import { recipeCookability } from '@/utils/cookability';
 import type { FoodGlyphId, IngredientCat } from '@/types';
 
 export function RecipeDetailPage() {
@@ -77,11 +78,9 @@ export function RecipeDetailPage() {
 
   if (!recipe) return null;
 
-  const pantryMap = Object.fromEntries(pantry.map((i) => [i.id, i.qty]));
-  const missing   = recipe.ingredients.filter(
-    (ing) => !ing.optional && !ing.ingredient.alwaysAvailable && (pantryMap[ing.ingredient.id] ?? 0) === 0,
-  );
-  const sprite0   = (recipe.sprites[0]?.sprite ?? 'Tomato') as FoodGlyphId;
+  const pantryMap   = Object.fromEntries(pantry.map((i) => [i.id, i.qty]));
+  const cookStatus  = recipeCookability(recipe);
+  const sprite0     = (recipe.sprites[0]?.sprite ?? 'Tomato') as FoodGlyphId;
   const accent    = FOOD_GLYPHS[sprite0]?.color ?? recipe.accent;
 
   return (
@@ -146,24 +145,36 @@ export function RecipeDetailPage() {
             const icon        = CAT_ICON[cat] ?? 'Tomato';
             const c           = FOOD_GLYPHS[icon]?.color ?? '#888';
             const alwaysAvail = ing.ingredient.alwaysAvailable;
-            const enough      = alwaysAvail || (pantryMap[ing.ingredient.id] ?? 0) >= ing.qty;
             const isOptional  = ing.optional;
+            const sameUnit    = ing.unit === ing.ingredient.unit;
+            const stock       = pantryMap[ing.ingredient.id] ?? 0;
+            const needed      = ing.qty;
+
+            const isMissing = !isOptional && !alwaysAvail && sameUnit && needed > 0 && stock < needed;
+            const isLow     = !isOptional && !alwaysAvail && sameUnit && needed > 0
+                              && stock >= needed && (stock - needed) < needed * 0.3;
+
             return (
               <div key={ing.id} className="flex-shrink-0 flex flex-col items-center gap-1.5 w-16">
                 <div
                   className={[
                     'w-14 h-14 rounded-full flex items-center justify-center relative',
-                    enough ? '' : isOptional ? 'opacity-40' : 'opacity-50',
+                    isMissing ? 'opacity-50' : isOptional ? 'opacity-40' : '',
                   ].join(' ')}
                   style={{ background: c + '20' }}
                 >
                   <FoodIcon name={icon} size={34} />
-                  {!enough && !isOptional && (
+                  {isMissing && (
                     <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-danger text-white flex items-center justify-center text-[11px] font-extrabold">
                       !
                     </div>
                   )}
-                  {isOptional && (
+                  {isLow && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-amber-400 text-amber-900 flex items-center justify-center text-[11px] font-extrabold">
+                      !
+                    </div>
+                  )}
+                  {isOptional && !isMissing && !isLow && (
                     <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-canvas border border-canvas text-muted flex items-center justify-center text-[8px] font-extrabold">
                       opc
                     </div>
@@ -180,10 +191,17 @@ export function RecipeDetailPage() {
           })}
         </div>
 
-        {missing.length > 0 && (
+        {cookStatus === 'unavailable' && (
           <div className="mt-3">
-            <Callout tone="attention" title={`${missing.length} ingrediente${missing.length > 1 ? 's' : ''} faltando`}>
+            <Callout tone="danger" title="Falta ingrediente">
               Adicione na lista de compras ou peça à Nonna uma substituição.
+            </Callout>
+          </div>
+        )}
+        {cookStatus === 'low' && (
+          <div className="mt-3">
+            <Callout tone="attention" title="Estoque baixo">
+              Dá pra fazer uma vez, mas o estoque vai ficar no limite.
             </Callout>
           </div>
         )}

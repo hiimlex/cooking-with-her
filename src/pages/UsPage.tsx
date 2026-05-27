@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Avatar, Card, FoodIcon } from '@/components/atoms';
 import { MenuRow, Section } from '@/components/molecules';
 import { Stars } from '@/components/atoms';
-import { FOOD_GLYPHS, IcBook, IcGear, IcImage, IcUtensils } from '@/icons';
+import { FOOD_GLYPHS, IcBook, IcCalendar, IcGear, IcImage, IcUtensils } from '@/icons';
 import { COUPLE } from '@/data/mock';
 import { useStatsData, timeAgo } from '@/hooks/useStatsData';
 import { getRecipes } from '@/api/recipes';
@@ -111,6 +111,13 @@ export function UsPage() {
               : 'Configure sua cozinha'}
             color="#22c55e"
             onClick={() => navigate('/us/utensils')}
+          />
+          <MenuRow
+            Icon={IcCalendar}
+            label="Registrar janta passada"
+            sub="Esqueceu de marcar no dia? Adicione aqui"
+            color="#f59e0b"
+            onClick={() => navigate('/us/log-past')}
           />
           <MenuRow
             Icon={IcGear}
